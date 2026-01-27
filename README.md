@@ -14,7 +14,6 @@ and the financial implications of different categories of errors.
 This tool is intended for researchers, policymakers, program administrators,
 and analysts interested in SNAP operations, administrative burden, and program accuracy.
 
----
 
 ## Application Tabs
 
@@ -34,8 +33,6 @@ and analysts interested in SNAP operations, administrative burden, and program a
   Provides a flexible, customizable summary table that allows users to dynamically
   explore SNAP QC errors across selected dimensions, similar to a pivot-table workflow.
 
-
----
 
 ## Data
 
