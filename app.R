@@ -431,118 +431,148 @@ ui <- fluidPage(
           )
         ),
         
-        # Pivot Table Tab
-        tabPanel(
-          "Pivot Table",
-          sidebarLayout(
-            sidebarPanel(
-              width = 3,
-              
-              h4("Filter data"),
-              pickerInput(
-                inputId = "filter_vars",
-                label   = "Choose filters:",
-                choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
-                            "Error Discovery", "Error Timing", "Status of Error Findings",
-                            "Case Type", "Year", "State"),
-                selected = c("State", "Year"),
-                multiple = TRUE,
-                options = list(
-                  `actions-box` = TRUE,
-                  liveSearch = TRUE,
-                  `selected-text-format` = "count > 2",
-                  `none-selected-text` = "None"
-                )
-              ),
-              bsTooltip(
-                id = "filter_vars",
-                title = "Choose which fields to filter. Leaving this empty includes ALL data.",
-                placement = "top",
-                trigger = "hover"
-              ),
-              
-              uiOutput("dynamic_filters"),
-              
-              tags$hr(),
-              
-              h4("Configure pivot"),
-              selectInput("pivot_rows", "Select row:",
-                          choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
-                                      "Error Discovery", "Error Timing", "Status of Error Findings",
-                                      "Case Type", "Year", "State"),
-                          selected = "Error Type"),
-              selectInput("pivot_cols", "Select column:",
-                          choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
-                                      "Error Discovery", "Error Timing", "Status of Error Findings",
-                                      "Case Type", "Year", "State"),
-                          selected = "Error Discovery"),
-              
-              tags$hr(),
-              h4("Base rates"),
-              checkboxInput(
-                inputId = "show_base_rates",
-                label   = "Show base error rates table",
-                value   = FALSE
-              ),
-              
-              conditionalPanel(
-                condition = "input.show_base_rates == true",
-                pickerInput(
-                  inputId  = "base_group_vars",
-                  label    = "Break down base rates by:",
-                  choices  = c(
-                    "State", "Year", "Case Type", "Status of Error Findings",
-                    "Error Type", "Error Nature", "Error Element"
-                  ),
-                  selected = c("State", "Year"),
-                  multiple = TRUE,
-                  options = list(
-                    `actions-box` = TRUE,
-                    liveSearch = TRUE,
-                    `selected-text-format` = "count > 2",
-                    `none-selected-text` = "Overall (no breakdown)"
-                  )
-                )
+      # Pivot Table Tab
+      tabPanel(
+        "Pivot Table",
+        sidebarLayout(
+          sidebarPanel(
+            width = 3,
+
+            h4("Filter data"),
+            pickerInput(
+              inputId = "filter_vars",
+              label   = "Choose filters:",
+              choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
+                          "Error Discovery", "Error Timing", "Status of Error Findings",
+                          "Case Type", "Year", "State"),
+              selected = c("State", "Year"),
+              multiple = TRUE,
+              options = list(
+                `actions-box` = TRUE,
+                liveSearch = TRUE,
+                `selected-text-format` = "count > 2",
+                `none-selected-text` = "None"
               )
             ),
-            
-            # Main panel
-            mainPanel(
-              width = 9,
+            bsTooltip(
+              id = "filter_vars",
+              title = "Choose which fields to filter. Leaving this empty includes ALL data.",
+              placement = "top",
+              trigger = "hover"
+            ),
 
-              tags$style(HTML("
-        #pvt_title .pvt-heading { font-size: 1.30rem; font-weight: 700; margin: 0 0 2px 0; }
-        #pvt_title .pvt-sub     { color: #6c757d; font-size: 0.96rem;  margin: 0 0 8px 0; }
-        #pvt_wrap {
-          max-width: 1500px;
-          overflow: auto;
-          border: 1px solid #e6eef5; border-radius: 8px; padding: 6px; background: #ffffff;
-        }
-        .pvt_notes { color:#5f6b76; font-size: 0.96rem; margin-top: 8px; }
-      ")),
-              
-              conditionalPanel(
-                condition = "input.show_base_rates == true",
-                tags$h4("Base error rates"),
-                DT::DTOutput("base_rates_table")
-              ),
-              
-              conditionalPanel(
-                condition = "input.show_base_rates == false",
-                uiOutput("pvt_title"),
-                
-                div(
-                  id = "pvt_wrap",
-                  pivottablerOutput("pvt_table", width = "100%", height = "685px")
-                ),
-                
-                div(
-                  class = "pvt_notes",
-                  "Notes: Each row in the dataset represents a unique case–error combination, ",
-                  "so a single case may appear more than once if it involves multiple types of errors."
-                )
-              )                                          
+            uiOutput("dynamic_filters"),
+
+            tags$hr(),
+
+            h4("Configure pivot"),
+            selectInput(
+              "pivot_rows", "Select row:",
+              choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
+                          "Error Discovery", "Error Timing", "Status of Error Findings",
+                          "Case Type", "Year", "State"),
+              selected = "Error Type"
+            ),
+            selectInput(
+              "pivot_cols", "Select column:",
+              choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
+                          "Error Discovery", "Error Timing", "Status of Error Findings",
+                          "Case Type", "Year", "State"),
+              selected = "Error Discovery"
+            ),
+
+            tags$hr()
+          ),
+
+          # Main panel
+          mainPanel(
+            width = 9,
+
+            tags$style(HTML("
+              #pvt_title .pvt-heading { font-size: 1.30rem; font-weight: 700; margin: 0 0 2px 0; }
+              #pvt_title .pvt-sub     { color: #6c757d; font-size: 0.96rem;  margin: 0 0 8px 0; }
+              #pvt_wrap {
+                max-width: 1500px;
+                overflow: auto;
+                border: 1px solid #e6eef5; border-radius: 8px; padding: 6px; background: #ffffff;
+              }
+              .pvt_notes { color:#5f6b76; font-size: 0.96rem; margin-top: 8px; }
+            ")),
+
+            uiOutput("pvt_title"),
+
+            div(
+              id = "pvt_wrap",
+              pivottablerOutput("pvt_table", width = "100%", height = "685px")
+            ),
+
+            div(
+              class = "pvt_notes",
+              "Notes: Each row in the dataset represents a unique case–error combination, ",
+              "so a single case may appear more than once if it involves multiple types of errors."
             )
+          )
+        )
+      ),
+
+
+      # Base Rate Tab
+      tabPanel(
+        "Base Rates",
+        sidebarLayout(
+          sidebarPanel(
+            width = 3,
+
+            h4("Filter data"),
+            pickerInput(
+              inputId = "br_filter_vars",
+              label   = "Choose filters:",
+              choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
+                          "Error Discovery", "Error Timing", "Status of Error Findings",
+                          "Case Type", "Year", "State"),
+              selected = c("State", "Year"),
+              multiple = TRUE,
+              options = list(
+                `actions-box` = TRUE,
+                liveSearch = TRUE,
+                `selected-text-format` = "count > 2",
+                `none-selected-text` = "None"
+              )
+            ),
+            bsTooltip(
+              id = "br_filter_vars",
+              title = "Choose which fields to filter. Leaving this empty includes ALL data.",
+              placement = "top",
+              trigger = "hover"
+            ),
+
+            uiOutput("br_dynamic_filters"),
+
+            tags$hr(),
+
+            h4("Base rates"),
+            pickerInput(
+              inputId  = "br_base_group_vars",
+              label    = "Break down base rates by:",
+              choices  = c(
+                "State", "Year", "Case Type", "Status of Error Findings",
+                "Error Type", "Error Nature", "Error Element"
+              ),
+              selected = c("State", "Year"),
+              multiple = TRUE,
+              options = list(
+                `actions-box` = TRUE,
+                liveSearch = TRUE,
+                `selected-text-format` = "count > 2",
+                `none-selected-text` = "Overall (no breakdown)"
+              )
+            )
+          ),
+
+          mainPanel(
+            width = 9,
+            tags$h4("Base error rates"),
+            DT::DTOutput("base_rates_table")
           )
         )
       )
@@ -565,6 +595,7 @@ ui <- fluidPage(
       )
     ) 
   )
+)
 )
   
   
@@ -1438,11 +1469,7 @@ server <- function(input, output, session) {
     req(input$filter_vars)
     
     lapply(input$filter_vars, function(v) {
-      df0 <- if (isTRUE(input$show_base_rates)) {
-        if (v %in% .error_dim_vars) base_cat_all else base_case_all
-      } else {
-        verification_all
-      }
+      df0 <- verification_all
       
       if (!v %in% names(df0)) {
         return(tags$div(
@@ -1468,6 +1495,38 @@ server <- function(input, output, session) {
       )
     })
   })
+
+  output$br_dynamic_filters <- renderUI({
+  req(input$br_filter_vars)
+
+    lapply(input$br_filter_vars, function(v) {
+      df0 <- if (v %in% .error_dim_vars) base_cat_all else base_case_all
+
+      if (!v %in% names(df0)) {
+        return(tags$div(
+          style = "color:#888; font-size: 12px; margin-bottom: 6px;",
+          paste0(v, " (not available)")
+        ))
+      }
+
+      choices <- .get_vals(df0, v)
+
+      pickerInput(
+        inputId  = paste0("br_flt__", .sanitize_id(v)),
+        label    = v,
+        choices  = choices,
+        selected = choices,
+        multiple = TRUE,
+        options = list(
+          `actions-box` = TRUE,
+          liveSearch = TRUE,
+          `selected-text-format` = "count > 2",
+          `none-selected-text` = "All"
+        )
+      )
+    })
+  })
+
   
   filtered_df <- reactive({
     df <- verification_all
@@ -1612,6 +1671,136 @@ server <- function(input, output, session) {
       dplyr::arrange(dplyr::across(dplyr::all_of(c(denom_group, err_group))))
   })
   
+  br_base_case_filtered <- reactive({
+    df <- base_case_all
+    vars <- input$br_filter_vars %||% character(0)
+
+    for (v in vars) {
+      if (v %in% .error_dim_vars) next
+      if (!v %in% names(df)) next
+
+      id  <- paste0("br_flt__", .sanitize_id(v))
+      sel <- input[[id]]
+      if (is.null(sel) || length(sel) == 0) next
+
+      df <- df[as.character(df[[v]]) %in% as.character(sel), , drop = FALSE]
+    }
+
+    if (!("Case ID" %in% names(df))) stop("base_case_all must contain a 'Case ID' column (exact name).")
+    if (!("has_error" %in% names(df))) stop("base_case_all must contain a 'has_error' TRUE/FALSE column.")
+    df$`Case ID` <- as.character(df$`Case ID`)
+    df
+  })
+
+  br_base_cat_filtered <- reactive({
+    cat_df <- base_cat_all
+    vars <- input$br_filter_vars %||% character(0)
+
+    if (!("Case ID" %in% names(cat_df))) stop("base_cat_all must contain a 'Case ID' column (exact name).")
+    cat_df$`Case ID` <- as.character(cat_df$`Case ID`)
+
+    denom_ids <- br_base_case_filtered() %>% dplyr::select(`Case ID`)
+    cat_df <- cat_df %>% dplyr::semi_join(denom_ids, by = "Case ID")
+
+    present_dims <- intersect(.error_dim_vars, names(cat_df))
+    if (length(present_dims)) {
+      cat_df <- cat_df %>%
+        dplyr::mutate(dplyr::across(dplyr::all_of(present_dims), .clean_cat_or_na))
+    }
+
+    for (v in intersect(vars, .error_dim_vars)) {
+      if (!v %in% names(cat_df)) next
+      id  <- paste0("br_flt__", .sanitize_id(v))
+      sel <- input[[id]]
+      if (is.null(sel) || length(sel) == 0) next
+
+      cat_df <- cat_df %>%
+        dplyr::filter(!is.na(.data[[v]]), .data[[v]] %in% as.character(sel))
+    }
+
+    cat_df
+  })
+
+  br_base_rates_summary <- reactive({
+    denom_df <- br_base_case_filtered()
+    cat_df   <- br_base_cat_filtered()
+
+    grp_raw <- input$br_base_group_vars %||% character(0)
+    err_group <- intersect(grp_raw, .error_dim_vars)
+    err_group <- err_group[err_group %in% names(cat_df)]
+
+    # overall base error rate
+    if (length(err_group) == 0) {
+      denom_group <- grp_raw[grp_raw %in% names(denom_df)]
+
+      if (length(denom_group) == 0) {
+        return(
+          denom_df %>%
+            dplyr::summarise(
+              reviewed_n = dplyr::n(),
+              error_n    = sum(has_error, na.rm = TRUE),
+              error_rate = dplyr::if_else(reviewed_n > 0, error_n / reviewed_n, NA_real_),
+              .groups = "drop"
+            )
+        )
+      } else {
+        return(
+          denom_df %>%
+            dplyr::group_by(dplyr::across(dplyr::all_of(denom_group))) %>%
+            dplyr::summarise(
+              reviewed_n = dplyr::n(),
+              error_n    = sum(has_error, na.rm = TRUE),
+              error_rate = dplyr::if_else(reviewed_n > 0, error_n / reviewed_n, NA_real_),
+              .groups = "drop"
+            ) %>%
+            dplyr::arrange(dplyr::across(dplyr::all_of(denom_group)))
+        )
+      }
+    }
+
+    # category base rates by Error Type/Nature/Element
+    denom_group <- intersect(grp_raw, intersect(names(denom_df), names(cat_df)))
+    denom_group <- setdiff(denom_group, .error_dim_vars)
+
+    denom_s <- if (length(denom_group) == 0) {
+      denom_df %>%
+        dplyr::summarise(reviewed_n = dplyr::n(), .groups = "drop") %>%
+        dplyr::mutate(.join_key = 1L)
+    } else {
+      denom_df %>%
+        dplyr::group_by(dplyr::across(dplyr::all_of(denom_group))) %>%
+        dplyr::summarise(reviewed_n = dplyr::n(), .groups = "drop")
+    }
+
+    cat_df2 <- cat_df
+    for (v in err_group) cat_df2 <- cat_df2 %>% dplyr::filter(!is.na(.data[[v]]))
+
+    err_s <- {
+      gvars <- c(denom_group, err_group)
+      out <- cat_df2 %>%
+        dplyr::group_by(dplyr::across(dplyr::all_of(gvars))) %>%
+        dplyr::summarise(
+          error_n = dplyr::n_distinct(`Case ID`),
+          .groups = "drop"
+        )
+      if (length(denom_group) == 0) out <- out %>% dplyr::mutate(.join_key = 1L)
+      out
+    }
+
+    joined <- if (length(denom_group) == 0) {
+      dplyr::left_join(err_s, denom_s, by = ".join_key") %>% dplyr::select(-.join_key)
+    } else {
+      dplyr::left_join(err_s, denom_s, by = denom_group)
+    }
+
+    joined %>%
+      dplyr::mutate(
+        error_rate = dplyr::if_else(!is.na(reviewed_n) & reviewed_n > 0, error_n / reviewed_n, NA_real_)
+      ) %>%
+      dplyr::arrange(dplyr::across(dplyr::all_of(c(denom_group, err_group))))
+  })
+
+
   output$pvt_title <- renderUI({
     title_txt <- sprintf("%s by %s", input$pivot_rows, input$pivot_cols)
     
@@ -1626,11 +1815,7 @@ server <- function(input, output, session) {
     vars <- input$filter_vars %||% character(0)
     
     for (v in vars) {
-      df0 <- if (isTRUE(input$show_base_rates)) {
-        if (v %in% .error_dim_vars) base_cat_all else base_case_all
-      } else {
-        verification_all
-      }
+      df0 <- verification_all
       
       if (!v %in% names(df0)) next
       
@@ -1658,16 +1843,14 @@ server <- function(input, output, session) {
   })
   
   output$base_rates_table <- DT::renderDT({
-    req(isTRUE(input$show_base_rates))
-    
-    out <- base_rates_summary() %>%
+    out <- br_base_rates_summary() %>%
       dplyr::mutate(
         `Error rate (%)`      = round(100 * error_rate, 1),
         `Reviewed cases (N)`  = reviewed_n,
         `Error cases (N)`     = error_n
       ) %>%
       dplyr::select(-reviewed_n, -error_n, -error_rate)
-    
+
     DT::datatable(
       out,
       rownames = FALSE,
@@ -1679,7 +1862,7 @@ server <- function(input, output, session) {
   })
   
   output$pvt_table <- renderPivottabler({
-    req(!isTRUE(input$show_base_rates))
+    # req(!isTRUE(input$show_base_rates))
     req(input$pivot_rows, input$pivot_cols)
     
     df <- filtered_df()
