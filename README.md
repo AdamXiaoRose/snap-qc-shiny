@@ -1,6 +1,6 @@
 # SNAP QC Error Viewer
 
-🔗 **Live app:** https://xiao-dataviz.shinyapps.io/snap-qc-shiny/
+🔗 **Live app:** [https://xiao-dataviz.shinyapps.io/snap-qc-shiny/](https://bettergovernmentlab.shinyapps.io/snap-qc-shiny/)
 
 ## Overview
 The **SNAP QC Error Viewer** is an interactive Shiny dashboard designed to explore and analyze
