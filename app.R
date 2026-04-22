@@ -8,14 +8,24 @@ library(plotly)
 library(pivottabler)
 library(tidyverse)
 
+threshold_by_year <- c(
+  `2017` = 38,
+  `2018` = 37,
+  `2019` = 37,
+  `2020` = 37,
+  `2021` = 39,
+  `2022` = 48,
+  `2023` = 54
+)
+
 # pivot table data
-verification_2023 <- readRDS("pivot_table_2023.RDS") %>% mutate(year = rep(2023, nrow(.)))
-verification_2022 <- readRDS("pivot_table_2022.RDS") %>% mutate(year = rep(2022, nrow(.)))
-verification_2021 <- readRDS("pivot_table_2021.RDS") %>% mutate(year = rep(2021, nrow(.)))
-verification_2020 <- readRDS("pivot_table_2020.RDS") %>% mutate(year = rep(2020, nrow(.)))
-verification_2019 <- readRDS("pivot_table_2019.RDS") %>% mutate(year = rep(2019, nrow(.)))
-verification_2018 <- readRDS("pivot_table_2018.RDS") %>% mutate(year = rep(2018, nrow(.)))
-verification_2017 <- readRDS("pivot_table_2017.RDS") %>% mutate(year = rep(2017, nrow(.)))
+verification_2023 <- readRDS("data/pivot_table_2023.RDS") %>% mutate(year = rep(2023, nrow(.)))
+verification_2022 <- readRDS("data/pivot_table_2022.RDS") %>% mutate(year = rep(2022, nrow(.)))
+verification_2021 <- readRDS("data/pivot_table_2021.RDS") %>% mutate(year = rep(2021, nrow(.)))
+verification_2020 <- readRDS("data/pivot_table_2020.RDS") %>% mutate(year = rep(2020, nrow(.)))
+verification_2019 <- readRDS("data/pivot_table_2019.RDS") %>% mutate(year = rep(2019, nrow(.)))
+verification_2018 <- readRDS("data/pivot_table_2018.RDS") %>% mutate(year = rep(2018, nrow(.)))
+verification_2017 <- readRDS("data/pivot_table_2017.RDS") %>% mutate(year = rep(2017, nrow(.)))
 
 verification_all <- bind_rows(
   verification_2017,
@@ -37,22 +47,30 @@ verification_all <- bind_rows(
          `Error Timing` = `Time Period`,
          `Case Type` = `Action Type`,
          `Year` = year) %>%
-  mutate(`Error Discovery` = ifelse(is.na(`Error Discovery`), "Other", `Error Discovery`))
+  mutate(
+    `Error Discovery` = ifelse(is.na(`Error Discovery`), "Other", `Error Discovery`),
+    threshold = unname(threshold_by_year[as.character(Year)]),
+    over_threshold = if_else(
+      !is.na(`Dollar Amount in Error`) & `Dollar Amount in Error` > threshold,
+      1L,
+      0L
+    )
+  )
 
 colnames(verification_all)
 
 # base percentages
-base_case_all <- readRDS("base_case_2017_2023.rds")
-base_cat_all  <- readRDS("base_cat_2017_2023.rds")
+base_case_all <- readRDS("data/base_case_2017_2023.rds")
+base_cat_all  <- readRDS("data/base_cat_2017_2023.rds")
 
 # errors by categories
-df_error_2023 <- readRDS("snap_error_2023.RDS") %>% mutate(year = rep(2023, nrow(.)))
-df_error_2022 <- readRDS("snap_error_2022.RDS") %>% mutate(year = rep(2022, nrow(.)))
-df_error_2021 <- readRDS("snap_error_2021.RDS")  %>% mutate(year = rep(2021, nrow(.)))
-df_error_2020 <- readRDS("snap_error_2020.RDS")  %>% mutate(year = rep(2020, nrow(.)))
-df_error_2019 <- readRDS("snap_error_2019.RDS")  %>% mutate(year = rep(2019, nrow(.)))
-df_error_2018 <- readRDS("snap_error_2018.RDS")  %>% mutate(year = rep(2018, nrow(.)))
-df_error_2017 <- readRDS("snap_error_2017.RDS") %>% mutate(year = rep(2017, nrow(.)))
+df_error_2023 <- readRDS("data/snap_error_2023.RDS") %>% mutate(year = rep(2023, nrow(.)))
+df_error_2022 <- readRDS("data/snap_error_2022.RDS") %>% mutate(year = rep(2022, nrow(.)))
+df_error_2021 <- readRDS("data/snap_error_2021.RDS")  %>% mutate(year = rep(2021, nrow(.)))
+df_error_2020 <- readRDS("data/snap_error_2020.RDS")  %>% mutate(year = rep(2020, nrow(.)))
+df_error_2019 <- readRDS("data/snap_error_2019.RDS")  %>% mutate(year = rep(2019, nrow(.)))
+df_error_2018 <- readRDS("data/snap_error_2018.RDS")  %>% mutate(year = rep(2018, nrow(.)))
+df_error_2017 <- readRDS("data/snap_error_2017.RDS") %>% mutate(year = rep(2017, nrow(.)))
 
 df_error <- do.call("rbind", list(df_error_2017, 
                                   df_error_2018, 
@@ -61,16 +79,32 @@ df_error <- do.call("rbind", list(df_error_2017,
                                   df_error_2021, 
                                   df_error_2022,
                                   df_error_2023)) %>%
-  rename(`Dollar Amount in Error` = dollar_amount)
+  rename(`Dollar Amount in Error` = dollar_amount) %>%
+  mutate(
+    threshold = unname(threshold_by_year[as.character(year)]),
+    over_threshold = if_else(
+      !is.na(`Dollar Amount in Error`) & `Dollar Amount in Error` > threshold,
+      1L,
+      0L
+    )
+  )
+
+# build case-level threshold flag
+error_threshold_flags <- df_error %>%
+  group_by(case_id, year) %>%
+  summarise(
+    over_threshold = max(over_threshold, na.rm = TRUE),
+    .groups = "drop"
+  )
 
 # errors by demographics
-df_2023 <- readRDS("snap_demographics_2023.RDS") %>% mutate(year = rep(2023, nrow(.)))
-df_2022 <- readRDS("snap_demographics_2022.RDS") %>% mutate(year = rep(2022, nrow(.)))
-df_2021 <- readRDS("snap_demographics_2021.RDS")  %>% mutate(year = rep(2021, nrow(.)))
-df_2020 <- readRDS("snap_demographics_2020.RDS")  %>% mutate(year = rep(2020, nrow(.)))
-df_2019 <- readRDS("snap_demographics_2019.RDS")  %>% mutate(year = rep(2019, nrow(.)))
-df_2018 <- readRDS("snap_demographics_2018.RDS")  %>% mutate(year = rep(2018, nrow(.)))
-df_2017 <- readRDS("snap_demographics_2017.RDS") %>% mutate(year = rep(2017, nrow(.)))
+df_2023 <- readRDS("data/snap_demographics_2023.RDS") %>% mutate(year = rep(2023, nrow(.)))
+df_2022 <- readRDS("data/snap_demographics_2022.RDS") %>% mutate(year = rep(2022, nrow(.)))
+df_2021 <- readRDS("data/snap_demographics_2021.RDS")  %>% mutate(year = rep(2021, nrow(.)))
+df_2020 <- readRDS("data/snap_demographics_2020.RDS")  %>% mutate(year = rep(2020, nrow(.)))
+df_2019 <- readRDS("data/snap_demographics_2019.RDS")  %>% mutate(year = rep(2019, nrow(.)))
+df_2018 <- readRDS("data/snap_demographics_2018.RDS")  %>% mutate(year = rep(2018, nrow(.)))
+df_2017 <- readRDS("data/snap_demographics_2017.RDS") %>% mutate(year = rep(2017, nrow(.)))
 
 df <- do.call("rbind", list(df_2017, 
                             df_2018, 
@@ -92,6 +126,10 @@ df <- df %>%
   drop_na(`Expedited Service`) %>%
   drop_na(`Application or Renewal`) %>%
   drop_na(`Status of Error Findings`)
+
+df <- df %>%
+  left_join(error_threshold_flags, by = c("case_id", "year")) %>%
+  mutate(over_threshold = coalesce(over_threshold, 0L))
 
 type_to_responsibility <- list(
   "Information not reported by client" = "Client Errors",
@@ -117,7 +155,7 @@ ui <- fluidPage(
   title = "SNAP Quality Control Viewer",
   
   tags$head(
-    includeHTML("google-analytics.html"),
+    # includeHTML("google-analytics.html"),
     tags$style(HTML("
   /* General Styling for the Page */
   h1 {
@@ -180,6 +218,44 @@ ui <- fluidPage(
     text-decoration: underline;
   }
 
+  /* Base Rates tab: fix sidebar width; confine wide tables inside main panel */
+  #base-rates-layout {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;       /* last-resort: page never scrolls horizontally */
+    box-sizing: border-box;
+  }
+  #base-rates-layout > .row {
+    display: flex;
+    flex-wrap: nowrap;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100%;
+  }
+  #base-rates-layout .col-sm-3 {
+    flex: 0 0 360px;
+    width: 360px !important;
+    min-width: 360px;
+    max-width: 360px;
+    box-sizing: border-box;
+  }
+  #base-rates-layout .col-sm-9 {
+    flex: 1 1 0;              /* basis 0 + grow 1 = takes exactly the remaining space */
+    width: 0 !important;      /* definite starting width so DT can compute scroll wrapper */
+    min-width: 0;
+    max-width: none;
+    box-sizing: border-box;
+    overflow: hidden;         /* clip anything that escapes; DT's scrollX handles table scroll */
+  }
+  /* make sure DT's internal scroll wrapper is the only horizontal scroller inside main */
+  #base-rates-layout .dataTables_wrapper {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  #base-rates-layout .dataTables_scrollBody {
+    overflow-x: auto !important;
+  }
+
   /* Styling for Sankey Links */
   .sankey-link {
     fill-opacity: 0.2; /* Default transparency for all links */
@@ -191,416 +267,534 @@ ui <- fluidPage(
   }
 "))
     
-  
+    
   ),
-
+  
   div(
     id = "footer-container",
+    
     div(
-      style = "flex: 1;",
-      titlePanel(
-        h1("SNAP Quality Control Error Viewer")
-      ),
-      div(
-        class = "section-description",
-        p(HTML(
-          "This application visualizes Quality Control (QC) errors in Supplemental Nutrition Assistance Program (SNAP) cases, based on a nationally representative sample reviewed by state and federal auditors. 
-    Use the <strong>Error Pathways</strong> tab to examine how errors occurred and what caused them, 
-    <strong>Error Demographics</strong> to see which groups were most affected, 
-    and <strong>Error Severity</strong> to assess the financial impact of different error categories.
-          The <strong>Pivot Table</strong> tab provides a customizable table that summarizes SNAP QC errors by selected categories."
-        ))
-      ),
+      style = "text-align: left; margin-bottom: 10px;",
       
-      navbarPage(
-        title = NULL,
-        id = "nav",
-
-        # Sankey Diagram Tab
-        tabPanel(
-          "Error Pathways",
-          sidebarLayout(
-            sidebarPanel(
-              width = 3,
-              selectizeInput(
-                "year_sankey", "Select Year(s):",
-                choices = sort(unique(df_error$year), decreasing = TRUE),
-                multiple = TRUE, selected = c(2023, 2022, 2021, 2020, 2019, 2018, 2017)
-              ),
-              bsTooltip(
-                "year_sankey",
-                "If multiple years are selected, the displayed plot will be based on aggregated data.",
-                placement = "top", trigger = "hover"
-              ),
-              
-              selectizeInput(
-                "combination", "Select Error Pathway to Visualize:",
-                choices = c("Element → Nature → Type", "Element → Nature", "Element → Type", "Nature → Type"),
-                selected = "Element → Nature → Type"
-              ),
-              bsTooltip(
-                "combination",
-                "Error element refers to what went wrong, error nature refers to how it happened, and error type refers to why it happened.",
-                placement = "top", trigger = "hover"
-              ),
-              
-              radioButtons(
-                "flow_by", "Flow by:",
-                choices = c("Occurrences" = "count", "Dollar amount" = "dollars"),
-                selected = "count", inline = TRUE
-              ),
-              bsTooltip(
-                "flow_by",
-                "Choose what the link width represents: number of case-errors or total dollars in error.",
-                placement = "top", trigger = "hover"
-              ),
-              
-              uiOutput("dynamicFilters"),
-              
-              selectizeInput(
-                "state_sankey", "Select State:",
-                choices = c("All States", sort(unique(as.character(df_error$State))))
-              ),
-              
-              uiOutput("threshold_ui"),
-
-              bsTooltip(
-                "threshold",
-                "Hide small flows. This threshold applies to the selected metric (occurrences or dollars).",
-                placement = "top", trigger = "hover"
-              ),
-              
-              selectizeInput(
-                "status_filter", "Filter by Error Status:",
-                choices = c("All", "Underissuance", "Overissuance"),
-                selected = "All"
-              ),
-              bsTooltip(
-                "status_filter",
-                "Error status refers to whether the error led to an under- or overissuance.",
-                placement = "top", trigger = "hover"
-              )
-            ),
-            mainPanel(
-              width = 9,
+      img(
+        src = "bgl_top_logo.png",
+        style = "
+    width: 100%;
+    # max-width: 1200px;
+    max-height:120px;
+    height: auto;
+    display: block;
+    margin-left: 0;
+  "
+      )
+    ),
+    
+    div(
+      style = "text-align: left;",
+      
+      h1(
+        "SNAP Quality Control Error Viewer",
+        style = "margin: 0; line-height: 1.2;"
+      )
+    ),
+    
+    div(
+      class = "section-description",
+      style = "margin-top: 0;",
+      p(HTML("This application visualizes Quality Control (QC) errors in Supplemental Nutrition Assistance Program (SNAP) cases, based on a nationally representative sample reviewed by state and federal auditors. This tool uses SNAP Quality Control (QC) data, which is based on a sample of reviewed cases rather than the full population of SNAP participants. Differences across states may reflect variation in policy implementation and reporting practices, and should not be interpreted as direct comparisons of program performance. The data exclude cases found to be ineligible, which tend to represent larger errors. Users should interpret results with appropriate caution."))
+    )
+  ),
+  
+  navbarPage(
+    title = NULL,
+    id = "nav",
+    
+    # Sankey Diagram Tab
+    tabPanel(
+      "Error Pathways",
+      sidebarLayout(
+        sidebarPanel(
+          width = 3,
+          selectizeInput(
+            "year_sankey", "Select Year(s):",
+            choices = sort(unique(df_error$year), decreasing = TRUE),
+            multiple = TRUE, selected = c(2023, 2022, 2021, 2020, 2019, 2018, 2017)
+          ),
+          bsTooltip(
+            "year_sankey",
+            "If multiple years are selected, the displayed plot will be based on aggregated data.",
+            placement = "top", trigger = "hover"
+          ),
+          
+          selectizeInput(
+            "combination", "Select Error Pathway to Visualize:",
+            choices = c("Element → Nature → Type", "Element → Nature", "Element → Type", "Nature → Type"),
+            selected = "Element → Nature → Type"
+          ),
+          bsTooltip(
+            "combination",
+            "Error element refers to what went wrong, error nature refers to how it happened, and error type refers to why it happened.",
+            placement = "top", trigger = "hover"
+          ),
+          
+          radioButtons(
+            "flow_by", "Flow by:",
+            choices = c("Occurrences" = "count", "Dollar amount" = "dollars"),
+            selected = "count", inline = TRUE
+          ),
+          bsTooltip(
+            "flow_by",
+            "Choose what the link width represents: number of case-errors or total dollars in error.",
+            placement = "top", trigger = "hover"
+          ),
+          
+          uiOutput("dynamicFilters"),
+          
+          selectizeInput(
+            "state_sankey", "Select State:",
+            choices = c("All States", sort(unique(as.character(df_error$State))))
+          ),
+          
+          uiOutput("threshold_ui"),
+          
+          bsTooltip(
+            "threshold",
+            "Hide small flows. This threshold applies to the selected metric (occurrences or dollars).",
+            placement = "top", trigger = "hover"
+          ),
+          
+          selectizeInput(
+            "status_filter", "Filter by Error Status:",
+            choices = c("All", "Underissuance", "Overissuance"),
+            selected = "All"
+          ),
+          bsTooltip(
+            "status_filter",
+            "Error status refers to whether the error led to an under- or overissuance.",
+            placement = "top", trigger = "hover"
+          ),
+          checkboxInput(
+            inputId = "sankey_over_threshold_only",
+            label = "Only include cases above yearly error-rate threshold",
+            value = TRUE
+          )
+        ),
+        mainPanel(
+          width = 9,
+          div(
+            style = "position: relative; width: 100%;",
+            conditionalPanel(
+              condition = "input.combination == 'Element → Type'",
               div(
-                style = "position: relative; width: 100%;",
-                conditionalPanel(
-                  condition = "input.combination == 'Element → Type'",
-                  div(
-                    style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; height: auto;",
-                    h5(HTML("<span style='color: black; font-weight: bold;'>What went wrong<br>(Error Element)</span>")),
-                    h5(HTML("<span style='color: black; font-weight: bold;'>Why it happened<br>(Error Type)</span>"))
-                  )
-                ),
-                conditionalPanel(
-                  condition = "input.combination == 'Nature → Type'",
-                  div(
-                    style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; height: auto;",
-                    h5(HTML("<span style='color: black; font-weight: bold;'>How it happened<br>(Error Nature)</span>")),
-                    h5(HTML("<span style='color: black; font-weight: bold;'>Why it happened<br>(Error Type)</span>"))
-                  )
-                ),
-                conditionalPanel(
-                  condition = "input.combination == 'Element → Nature'",
-                  div(
-                    style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; height: auto;",
-                    h5(HTML("<span style='color: black; font-weight: bold;'>What went wrong<br>(Error Element)</span>")),
-                    h5(HTML("<span style='color: black; font-weight: bold;'>How it happened<br>(Error Nature)</span>"))
-                  )
-                ),
-                conditionalPanel(
-                  condition = "input.combination == 'Element → Nature → Type'",
-                  div(
-                    style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; height: auto;",
-                    h5(HTML("<span style='color: black; font-weight: bold;'>What went wrong<br>(Error Element)</span>")),
-                    h5(HTML("<span style='color: black; font-weight: bold; text-align: center;'>How it happened<br>(Error Nature)</span>")),
-                    h5(HTML("<span style='color: black; font-weight: bold;'>Why it happened<br>(Error Type)</span>"))
-                  )
-                ),
-                plotlyOutput("sankeyPlot", height = "700px")  
-              )
-            )
-          )
-        ),
-        
-        # Bar Chart Tab
-        tabPanel(
-          "Error Demographics",
-          sidebarLayout(
-            sidebarPanel(
-              width = 3,
-              selectInput("year_bar", "Select Year(s):", 
-                          choices = sort(unique(df$year), decreasing = TRUE), 
-                          multiple = TRUE, selected = c(2023, 2022, 2021, 2020, 2019, 2018, 2017)),
-              bsTooltip("year_bar", 
-                        "If multiple years are selected, the displayed plot will be based on aggregated data.", 
-                        placement = "top", trigger = "hover"),
-              
-              radioButtons("error_selection", "Select Error Category:", choices = c("Type", "Nature", "Element")),
-              uiOutput("error_dropdown_bar"),
-              
-              selectizeInput("state_bar", "Select State(s):",
-                             choices = c("All States", sort(unique(as.character(df_error$State)))),
-                             multiple = TRUE,
-                             selected = "All States"),
-              
-              selectInput("demographic", "Select Demographic:", 
-                          choices = c("Employment", "Race", "Gender", "Age", "Disability (Household Head)", 
-                                      "Disability (Household Member)", "Unit Composition", "Homelessness", 
-                                      "Expedited Service", "Application or Renewal", "Status of Error Findings"), 
-                          selected = "Employment"),
-              checkboxInput(inputId = "include_other_errors", label = "Include Other Errors for comparison", value = TRUE),
-              bsTooltip(id = "include_other_errors", 
-                        title = "Check this box to compare the demographic distribution for your selected error against all other errors. This helps you see whether the pattern is error-specific or reflects a general trend.",
-                        placement = "top", trigger = "hover")
-              
-            ),
-            mainPanel(
-              width = 9,
-              conditionalPanel(
-                condition = "(input.error_selection && input.demographic != '')",
-                plotOutput("barPlot", height = "761px", width = "100%")
-              )
-            )
-          )
-        ),
-        
-        # Error Severity Tab
-        tabPanel(
-          "Error Severity",
-          sidebarLayout(
-            sidebarPanel(
-              width = 3,
-              
-              selectInput("year_amt", "Select Year(s):", 
-                          choices = sort(unique(df_error$year), decreasing = TRUE),
-                          multiple = TRUE, selected = max(df_error$year)),
-              bsTooltip("year_amt", 
-                        "Select one or more years to include in the analysis.",
-                        placement = "top", trigger = "hover"),
-              
-              selectInput("state_amt", "Select State:", 
-                          choices = c("All States", sort(unique(as.character(df_error$State)))),
-                          selected = "All States"),
-              bsTooltip("state_amt", 
-                        "Choose a state to filter results, or select 'All States' to see national data.",
-                        placement = "top", trigger = "hover"),
-              
-              selectInput("status_amt", "Select Error Status:",
-                          choices = c("All", "Underissuance", "Overissuance"),
-                          selected = "All"),
-              bsTooltip("status_amt", 
-                        "Error status refers to whether the error led to an under- or overissuance.",
-                        placement = "top", trigger = "hover"),
-              
-              radioButtons("error_responsibility", "Error Responsibility:",
-                           choices = c("All", "Client Errors", "Agency Errors", "Technical Errors"),
-                           selected = "All", inline = FALSE),
-              
-              selectInput("view_amt_by", "Group By:",
-                          choices = c("Error Type", "Error Nature", "Error Element"),
-                          selected = "Error Type"),
-              bsTooltip("view_amt_by", 
-                        "Choose how to group errors for comparison.",
-                        placement = "top", trigger = "hover"),
-              selectInput("amt_sort_by", "Sort By:",
-                          choices = c("Average Dollar Amount", "Number of Cases"),
-                          selected = "Average Dollar Amount"),
-              
-              radioButtons("amt_top_n", "Display Top:",
-                           choices = c(5, 10, 20), selected = 5, inline = TRUE)
-              
-            ),
-            
-            mainPanel(
-              width = 9,
-              
-              tags$p(
-                style = "font-size: 13px; color: gray;",
-                "This plot shows the average dollar amount associated with each type of error. Dot size reflects how many unique cases involved that error. 
-        Results are filtered by year, state, and error status."
-              ),
-              
-              plotlyOutput("errorDollarPlot", height = "655px"),
-              br(),
-              downloadButton("download_dollar_data", "Download Data", class = "btn-primary"),
-              br(), br(),
-              textOutput("totalDollarSummary")
-            )
-          )
-        ),
-        
-      # Pivot Table Tab
-      tabPanel(
-        "Pivot Table",
-        sidebarLayout(
-          sidebarPanel(
-            width = 3,
-
-            h4("Filter data"),
-            pickerInput(
-              inputId = "filter_vars",
-              label   = "Choose filters:",
-              choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
-                          "Error Discovery", "Error Timing", "Status of Error Findings",
-                          "Case Type", "Year", "State"),
-              selected = c("State", "Year"),
-              multiple = TRUE,
-              options = list(
-                `actions-box` = TRUE,
-                liveSearch = TRUE,
-                `selected-text-format` = "count > 2",
-                `none-selected-text` = "None"
+                style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; height: auto;",
+                h5(HTML("<span style='color: black; font-weight: bold;'>What went wrong<br>(Error Element)</span>")),
+                h5(HTML("<span style='color: black; font-weight: bold;'>Why it happened<br>(Error Type)</span>"))
               )
             ),
-            bsTooltip(
-              id = "filter_vars",
-              title = "Choose which fields to filter. Leaving this empty includes ALL data.",
-              placement = "top",
-              trigger = "hover"
-            ),
-
-            uiOutput("dynamic_filters"),
-
-            tags$hr(),
-
-            h4("Configure pivot"),
-            selectInput(
-              "pivot_rows", "Select row:",
-              choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
-                          "Error Discovery", "Error Timing", "Status of Error Findings",
-                          "Case Type", "Year", "State"),
-              selected = "Error Type"
-            ),
-            selectInput(
-              "pivot_cols", "Select column:",
-              choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
-                          "Error Discovery", "Error Timing", "Status of Error Findings",
-                          "Case Type", "Year", "State"),
-              selected = "Error Discovery"
-            ),
-
-            tags$hr()
-          ),
-
-          # Main panel
-          mainPanel(
-            width = 9,
-
-            tags$style(HTML("
-              #pvt_title .pvt-heading { font-size: 1.30rem; font-weight: 700; margin: 0 0 2px 0; }
-              #pvt_title .pvt-sub     { color: #6c757d; font-size: 0.96rem;  margin: 0 0 8px 0; }
-              #pvt_wrap {
-                max-width: 1500px;
-                overflow: auto;
-                border: 1px solid #e6eef5; border-radius: 8px; padding: 6px; background: #ffffff;
-              }
-              .pvt_notes { color:#5f6b76; font-size: 0.96rem; margin-top: 8px; }
-            ")),
-
-            uiOutput("pvt_title"),
-
-            div(
-              id = "pvt_wrap",
-              pivottablerOutput("pvt_table", width = "100%", height = "685px")
-            ),
-
-            div(
-              class = "pvt_notes",
-              "Notes: Each row in the dataset represents a unique case–error combination, ",
-              "so a single case may appear more than once if it involves multiple types of errors."
-            )
-          )
-        )
-      ),
-
-
-      # Base Rate Tab
-      tabPanel(
-        "Base Rates",
-        sidebarLayout(
-          sidebarPanel(
-            width = 3,
-
-            h4("Filter data"),
-            pickerInput(
-              inputId = "br_filter_vars",
-              label   = "Choose filters:",
-              choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
-                          "Error Discovery", "Error Timing", "Status of Error Findings",
-                          "Case Type", "Year", "State"),
-              selected = c("State", "Year"),
-              multiple = TRUE,
-              options = list(
-                `actions-box` = TRUE,
-                liveSearch = TRUE,
-                `selected-text-format` = "count > 2",
-                `none-selected-text` = "None"
+            conditionalPanel(
+              condition = "input.combination == 'Nature → Type'",
+              div(
+                style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; height: auto;",
+                h5(HTML("<span style='color: black; font-weight: bold;'>How it happened<br>(Error Nature)</span>")),
+                h5(HTML("<span style='color: black; font-weight: bold;'>Why it happened<br>(Error Type)</span>"))
               )
             ),
-            bsTooltip(
-              id = "br_filter_vars",
-              title = "Choose which fields to filter. Leaving this empty includes ALL data.",
-              placement = "top",
-              trigger = "hover"
-            ),
-
-            uiOutput("br_dynamic_filters"),
-
-            tags$hr(),
-
-            h4("Base rates"),
-            pickerInput(
-              inputId  = "br_base_group_vars",
-              label    = "Break down base rates by:",
-              choices  = c(
-                "State", "Year", "Case Type", "Status of Error Findings",
-                "Error Type", "Error Nature", "Error Element"
-              ),
-              selected = c("State", "Year"),
-              multiple = TRUE,
-              options = list(
-                `actions-box` = TRUE,
-                liveSearch = TRUE,
-                `selected-text-format` = "count > 2",
-                `none-selected-text` = "Overall (no breakdown)"
+            conditionalPanel(
+              condition = "input.combination == 'Element → Nature'",
+              div(
+                style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; height: auto;",
+                h5(HTML("<span style='color: black; font-weight: bold;'>What went wrong<br>(Error Element)</span>")),
+                h5(HTML("<span style='color: black; font-weight: bold;'>How it happened<br>(Error Nature)</span>"))
               )
-            )
-          ),
-
-          mainPanel(
-            width = 9,
-            tags$h4("Base error rates"),
-            DT::DTOutput("base_rates_table")
+            ),
+            conditionalPanel(
+              condition = "input.combination == 'Element → Nature → Type'",
+              div(
+                style = "display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; height: auto;",
+                h5(HTML("<span style='color: black; font-weight: bold;'>What went wrong<br>(Error Element)</span>")),
+                h5(HTML("<span style='color: black; font-weight: bold; text-align: center;'>How it happened<br>(Error Nature)</span>")),
+                h5(HTML("<span style='color: black; font-weight: bold;'>Why it happened<br>(Error Type)</span>"))
+              )
+            ),
+            plotlyOutput("sankeyPlot", height = "700px")  
           )
         )
       )
     ),
     
-    
-    tags$div(
-      id = "footer",
-      style = "margin-top: 60px;",
-      p(
-        "Data Source: ",
-        tags$a(href = "https://www.fns.usda.gov/snap/qc/database", target = "_blank", "SNAP Quality Control Data. "),
-        "For the sankey diagram, nodes are ordered in descending frequency. ",
-        "For the bar chart, percentages that round to 0% will not be displayed.",
-        "For illustrative examples of how error element, nature, and type can come together to form a possible error scenario, refer to ",
-        tags$a(href = "https://docs.google.com/spreadsheets/d/1zLF0h30Ic2Y9cv4sRDV3UTuInR-QgeN9RWrvRA0bT3k/edit?usp=sharing", 
-               target = "_blank", "this reference sheet."),
-        tags$br(),
-        "Developed by: Zhaowen Guo, Better Government Lab, Georgetown University"
+    # Bar Chart Tab
+    tabPanel(
+      "Error Demographics",
+      sidebarLayout(
+        sidebarPanel(
+          width = 3,
+          selectInput("year_bar", "Select Year(s):", 
+                      choices = sort(unique(df$year), decreasing = TRUE), 
+                      multiple = TRUE, selected = c(2023, 2022, 2021, 2020, 2019, 2018, 2017)),
+          bsTooltip("year_bar", 
+                    "If multiple years are selected, the displayed plot will be based on aggregated data.", 
+                    placement = "top", trigger = "hover"),
+          
+          radioButtons("error_selection", "Select Error Category:", choices = c("Type", "Nature", "Element")),
+          uiOutput("error_dropdown_bar"),
+          
+          selectizeInput("state_bar", "Select State(s):",
+                         choices = c("All States", sort(unique(as.character(df_error$State)))),
+                         multiple = TRUE,
+                         selected = "All States"),
+          
+          checkboxInput(
+            inputId = "bar_over_threshold_only",
+            label = "Only include cases above yearly error-rate threshold",
+            value = TRUE
+          ),
+          selectInput("demographic", "Select Demographic:", 
+                      choices = c("Employment", "Race", "Gender", "Age", "Disability (Household Head)", 
+                                  "Disability (Household Member)", "Unit Composition", "Homelessness", 
+                                  "Expedited Service", "Application or Renewal", "Status of Error Findings"), 
+                      selected = "Employment"),
+          checkboxInput(inputId = "include_other_errors", label = "Include Other Errors for comparison", value = TRUE),
+          bsTooltip(id = "include_other_errors", 
+                    title = "Check this box to compare the demographic distribution for your selected error against all other errors. This helps you see whether the pattern is error-specific or reflects a general trend.",
+                    placement = "top", trigger = "hover")
+          
+        ),
+        mainPanel(
+          width = 9,
+          conditionalPanel(
+            condition = "(input.error_selection && input.demographic != '')",
+            plotOutput("barPlot", height = "761px", width = "100%")
+          )
+        )
       )
-    ) 
+    ),
+    
+    # Error Severity Tab
+    tabPanel(
+      "Error Severity",
+      sidebarLayout(
+        sidebarPanel(
+          width = 3,
+          
+          selectInput("year_amt", "Select Year(s):", 
+                      choices = sort(unique(df_error$year), decreasing = TRUE),
+                      multiple = TRUE, selected = max(df_error$year)),
+          bsTooltip("year_amt", 
+                    "Select one or more years to include in the analysis.",
+                    placement = "top", trigger = "hover"),
+          
+          selectInput("state_amt", "Select State:", 
+                      choices = c("All States", sort(unique(as.character(df_error$State)))),
+                      selected = "All States"),
+          bsTooltip("state_amt", 
+                    "Choose a state to filter results, or select 'All States' to see national data.",
+                    placement = "top", trigger = "hover"),
+          
+          selectInput("status_amt", "Select Error Status:",
+                      choices = c("All", "Underissuance", "Overissuance"),
+                      selected = "All"),
+          bsTooltip("status_amt", 
+                    "Error status refers to whether the error led to an under- or overissuance.",
+                    placement = "top", trigger = "hover"),
+          
+          checkboxInput(
+            inputId = "severity_over_threshold_only",
+            label = "Only include cases above yearly error-rate threshold",
+            value = TRUE
+          ),
+          
+          radioButtons("error_responsibility", "Error Responsibility:",
+                       choices = c("All", "Client Errors", "Agency Errors", "Technical Errors"),
+                       selected = "All", inline = FALSE),
+          
+          selectInput("view_amt_by", "Group By:",
+                      choices = c("Error Type", "Error Nature", "Error Element"),
+                      selected = "Error Type"),
+          bsTooltip("view_amt_by", 
+                    "Choose how to group errors for comparison.",
+                    placement = "top", trigger = "hover"),
+          selectInput("amt_sort_by", "Sort By:",
+                      choices = c("Average Dollar Amount", "Number of Cases"),
+                      selected = "Average Dollar Amount"),
+          
+          radioButtons("amt_top_n", "Display Top:",
+                       choices = c(5, 10, 20), selected = 5, inline = TRUE)
+          
+        ),
+        
+        mainPanel(
+          width = 9,
+          
+          tags$p(
+            style = "font-size: 13px; color: gray;",
+            "This plot shows the average dollar amount associated with each type of error. Dot size reflects how many unique cases involved that error. 
+      Results are filtered by year, state, and error status."
+          ),
+          
+          plotlyOutput("errorDollarPlot", height = "655px"),
+          br(),
+          downloadButton("download_dollar_data", "Download Data", class = "btn-primary"),
+          br(), br(),
+          textOutput("totalDollarSummary")
+        )
+      )
+    ),
+    
+    # Pivot Table Tab
+    tabPanel(
+      "Pivot Table",
+      sidebarLayout(
+        sidebarPanel(
+          width = 3,
+          
+          h4("Filter data"),
+          pickerInput(
+            inputId = "filter_vars",
+            label   = "Choose filters:",
+            choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
+                        "Error Discovery", "Error Timing", "Status of Error Findings",
+                        "Case Type", "Year", "State"),
+            selected = c("State", "Year"),
+            multiple = TRUE,
+            options = list(
+              `actions-box` = TRUE,
+              liveSearch = TRUE,
+              `selected-text-format` = "count > 2",
+              `none-selected-text` = "None"
+            )
+          ),
+          bsTooltip(
+            id = "filter_vars",
+            title = "Choose which fields to filter. Leaving this empty includes ALL data.",
+            placement = "top",
+            trigger = "hover"
+          ),
+          
+          uiOutput("dynamic_filters"),
+          
+          checkboxInput(
+            inputId = "pivot_over_threshold_only",
+            label = "Only include cases above yearly error-rate threshold",
+            value = TRUE
+          ),
+          
+          tags$hr(),
+          
+          h4("Configure pivot"),
+          selectInput(
+            "pivot_rows", "Select row:",
+            choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
+                        "Error Discovery", "Error Timing", "Status of Error Findings",
+                        "Case Type", "Year", "State"),
+            selected = "Error Type"
+          ),
+          selectInput(
+            "pivot_cols", "Select column:",
+            choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
+                        "Error Discovery", "Error Timing", "Status of Error Findings",
+                        "Case Type", "Year", "State"),
+            selected = "Error Discovery"
+          ),
+          
+          tags$hr(),
+          # 
+          # h4("Base rates"),
+          # pickerInput(
+          #   inputId = "br_base_group_vars",
+          #   label = "Break down base rates by:",
+          #   choices = c(
+          #     "State", "Year", "Case Type", "Status of Error Findings",
+          #     "Error Type", "Error Nature", "Error Element"
+          #   ),
+          #   selected = c("State", "Year"),
+          #   multiple = TRUE,
+          #   options = list(
+          #     `actions-box` = TRUE,
+          #     liveSearch = TRUE,
+          #     `selected-text-format` = "count > 2",
+          #     `none-selected-text` = "Overall (no breakdown)"
+          #   )
+          # )
+        ),
+        
+        # Main panel
+        mainPanel(
+          width = 9,
+          
+          tags$style(HTML("
+            #pvt_title .pvt-heading { font-size: 1.30rem; font-weight: 700; margin: 0 0 2px 0; }
+            #pvt_title .pvt-sub     { color: #6c757d; font-size: 0.96rem;  margin: 0 0 8px 0; }
+            #pvt_wrap {
+              max-width: 1500px;
+              overflow: auto;
+              border: 1px solid #e6eef5; border-radius: 8px; padding: 6px; background: #ffffff;
+            }
+            .pvt_notes { color:#5f6b76; font-size: 0.96rem; margin-top: 8px; }
+          ")),
+          
+          uiOutput("pvt_title"),
+          
+          div(
+            id = "pvt_wrap",
+            pivottablerOutput("pvt_table", width = "100%", height = "685px")
+          ),
+          
+          div(
+            class = "pvt_notes",
+            "Notes: Each row in the dataset represents a unique case–error combination, ",
+            "so a single case may appear more than once if it involves multiple types of errors."
+          )
+        )
+      )
+    ),
+    
+    # Base Rate Tab
+    tabPanel(
+      "Base Rates",
+      div(
+        id = "base-rates-layout",
+        sidebarLayout(
+        sidebarPanel(
+          width = 3,
+          
+          h4("Filter data"),
+          pickerInput(
+            inputId = "br_filter_vars",
+            label   = "Choose filters:",
+            choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
+                        "Error Discovery", "Error Timing", "Status of Error Findings",
+                        "Case Type", "Year", "State"),
+            selected = c("State", "Error Element", "Error Nature"),
+            multiple = TRUE,
+            options = list(
+              `actions-box` = TRUE,
+              liveSearch = TRUE,
+              `selected-text-format` = "count > 2",
+              `none-selected-text` = "None"
+            )
+          ),
+          bsTooltip(
+            id = "br_filter_vars",
+            title = "Choose which fields to filter. Leaving this empty includes ALL data.",
+            placement = "top",
+            trigger = "hover"
+          ),
+          
+          uiOutput("br_dynamic_filters"),
+          
+          checkboxInput(
+            inputId = "br_over_threshold_only",
+            label = "Only include cases above yearly error-rate threshold",
+            value = TRUE
+          ),
+          
+          tags$hr(),
+          
+          h4("Configure output"),
+          pickerInput(
+            inputId = "br_base_group_vars",
+            label = "Break down base rates by:",
+            choices = c(
+              "State", "Year", "Case Type", "Status of Error Findings",
+              "Error Type", "Error Nature", "Error Element"
+            ),
+            selected = c("State", "Year"),
+            multiple = TRUE,
+            options = list(
+              `actions-box` = TRUE,
+              liveSearch = TRUE,
+              `selected-text-format` = "count > 2",
+              `none-selected-text` = "Overall (no breakdown)"
+            )
+          )
+          
+        ),
+        
+        mainPanel(
+          width = 9,
+          
+          tabsetPanel(
+            
+            tabPanel(
+              "Base error rates",
+              br(),
+              downloadButton("download_base_error_rates_csv", "Download CSV"),
+              br(),
+              br(),
+              DT::dataTableOutput("base_rates_table")
+            ),
+            
+            tabPanel(
+              "Simple view (State × Error Nature)",
+              tags$p(
+                style = "font-size: 13px; color: gray;",
+                "Rows = States, columns = Error Natures, values = percentage of total errors."
+              ),
+              downloadButton("download_simple_view_csv", "Download CSV"),
+              br(),
+              br(),
+              div(
+                style = "overflow-x:auto;",
+                DT::DTOutput("base_rates_simple_table")
+              )
+            )
+
+          )
+        )
+        )
+      )
+    )
+  ),
+
+
+  tags$div(
+    id = "footer",
+    style = "margin-top: 60px;",
+    
+    div(
+      style = "margin-bottom: 10px;",
+      img(
+        src = "BetterGovernmentLab-Logo-WithUniversities-Orange.png",
+        height = "45px"
+      )
+    ),
+    
+    p(
+      "Data Source: ",
+      tags$a(href = "https://www.fns.usda.gov/snap/qc/database", target = "_blank", "SNAP Quality Control Data. "),
+      "For the sankey diagram, nodes are ordered in descending frequency. ",
+      "For the bar chart, percentages that round to 0% will not be displayed.",
+      "For illustrative examples of how error element, nature, and type can come together to form a possible error scenario, refer to ",
+      tags$a(
+        href = "https://docs.google.com/spreadsheets/d/1zLF0h30Ic2Y9cv4sRDV3UTuInR-QgeN9RWrvRA0bT3k/edit?usp=sharing",
+        target = "_blank",
+        "this reference sheet."
+      ),
+      tags$br(),
+      "Developed by: Zhaowen Guo, Xiao Xu, ",
+      tags$a(
+        href = "https://www.bettergovernmentlab.org/resources/snap-quality-control-error-viewer",
+        target = "_blank",
+        "Better Government Lab"
+      ),
+      ", Georgetown University"
+    )
   )
 )
-)
-  
-  
+
+
 
 server <- function(input, output, session) {
+  
+  base_case_all <- base_case_all %>%
+    dplyr::mutate(
+      threshold = unname(threshold_by_year[as.character(Year)]),
+      over_threshold = dplyr::if_else(
+        has_error == 1 & !is.na(`Dollar Amount in Error`) & `Dollar Amount in Error` > threshold,
+        1L,
+        0L
+      )
+    )
   
   element_choices <- list(
     "Select All" = "Select All",
@@ -824,9 +1018,17 @@ server <- function(input, output, session) {
       1000
     }
     
-    filtered_data <- df_error %>% dplyr::filter(year %in% as.numeric(input$year_sankey))
+    filtered_data <- df_error %>%
+      dplyr::filter(year %in% as.numeric(input$year_sankey))
+    
+    if (isTRUE(input$sankey_over_threshold_only)) {
+      filtered_data <- filtered_data %>%
+        dplyr::filter(over_threshold == 1)
+    }
+    
     if (input$state_sankey != "All States") {
-      filtered_data <- filtered_data %>% dplyr::filter(State == input$state_sankey)
+      filtered_data <- filtered_data %>%
+        dplyr::filter(State == input$state_sankey)
     }
     if (!is.null(input$typeFilter) && !("Select All" %in% input$typeFilter)) {
       filtered_data <- filtered_data %>% dplyr::filter(Type %in% input$typeFilter)
@@ -1188,6 +1390,11 @@ server <- function(input, output, session) {
       filter(year %in% input$year_bar) %>%
       filter(State %in% real_states)
     
+    if (isTRUE(input$bar_over_threshold_only)) {
+      df_filtered_real <- df_filtered_real %>%
+        filter(over_threshold == 1)
+    }
+    
     error_var <- switch(input$error_selection,
                         "Type" = "error_type",
                         "Nature" = "error_nature",
@@ -1216,7 +1423,13 @@ server <- function(input, output, session) {
     selected_group_all <- NULL
     other_group_all <- NULL
     if (include_all_states) {
-      df_filtered_all <- df %>% filter(year %in% input$year_bar)
+      df_filtered_all <- df %>%
+        filter(year %in% input$year_bar)
+      
+      if (isTRUE(input$bar_over_threshold_only)) {
+        df_filtered_all <- df_filtered_all %>%
+          filter(over_threshold == 1)
+      }
       
       selected_error_all <- df_filtered_all %>% filter(.data[[error_var]] == input$error_choice)
       other_errors_all   <- df_filtered_all %>% filter(.data[[error_var]] != input$error_choice)
@@ -1286,7 +1499,7 @@ server <- function(input, output, session) {
   })
   
   
-
+  
   # Error severity
   output$errorDollarPlot <- renderPlotly({
     req(input$year_amt, input$view_amt_by, input$amt_sort_by, input$amt_top_n)
@@ -1294,10 +1507,11 @@ server <- function(input, output, session) {
     df_filtered <- df_error %>%
       mutate(ResponsibilityGroup = type_to_responsibility[Type]) %>%
       filter(year %in% input$year_amt) %>%
+      filter(if (isTRUE(input$severity_over_threshold_only)) over_threshold == 1 else TRUE) %>%
       filter(if (input$state_amt != "All States") State == input$state_amt else TRUE) %>%
       filter(if (input$status_amt != "All") `Status of Error Findings` == input$status_amt else TRUE) %>%
       filter(if (input$error_responsibility != "All") ResponsibilityGroup == input$error_responsibility else TRUE)
-      
+    
     group_var <- switch(input$view_amt_by,
                         "Error Type" = "Type",
                         "Error Nature" = "Nature",
@@ -1383,6 +1597,7 @@ server <- function(input, output, session) {
       
       df_filtered <- df_error %>%
         filter(year %in% input$year_amt) %>%
+        filter(if (isTRUE(input$severity_over_threshold_only)) over_threshold == 1 else TRUE) %>%
         filter(if (input$state_amt != "All States") State == input$state_amt else TRUE) %>%
         filter(if (input$status_amt != "All") `Status of Error Findings` == input$status_amt else TRUE) %>%
         mutate(ResponsibilityGroup = dplyr::recode(Type, !!!type_to_responsibility))
@@ -1495,27 +1710,33 @@ server <- function(input, output, session) {
       )
     })
   })
-
+  
   output$br_dynamic_filters <- renderUI({
-  req(input$br_filter_vars)
-
+    req(input$br_filter_vars)
+    
     lapply(input$br_filter_vars, function(v) {
       df0 <- if (v %in% .error_dim_vars) base_cat_all else base_case_all
-
+      
       if (!v %in% names(df0)) {
         return(tags$div(
           style = "color:#888; font-size: 12px; margin-bottom: 6px;",
           paste0(v, " (not available)")
         ))
       }
-
+      
       choices <- .get_vals(df0, v)
-
+      
+      default_selected <- if (v == "Error Element" && "Earned income deductions" %in% choices) {
+        "Earned income deductions"
+      } else {
+        choices
+      }
+      
       pickerInput(
         inputId  = paste0("br_flt__", .sanitize_id(v)),
         label    = v,
         choices  = choices,
-        selected = choices,
+        selected = default_selected,
         multiple = TRUE,
         options = list(
           `actions-box` = TRUE,
@@ -1526,7 +1747,7 @@ server <- function(input, output, session) {
       )
     })
   })
-
+  
   
   filtered_df <- reactive({
     df <- verification_all
@@ -1538,6 +1759,11 @@ server <- function(input, output, session) {
       sel <- input[[id]]
       if (is.null(sel) || length(sel) == 0) next
       df <- df[as.character(df[[v]]) %in% as.character(sel), , drop = FALSE]
+    }
+    
+    if (isTRUE(input$pivot_over_threshold_only)) {
+      df <- df %>%
+        dplyr::filter(over_threshold == 1)
     }
     
     df
@@ -1674,133 +1900,276 @@ server <- function(input, output, session) {
   br_base_case_filtered <- reactive({
     df <- base_case_all
     vars <- input$br_filter_vars %||% character(0)
-
+    
     for (v in vars) {
       if (v %in% .error_dim_vars) next
       if (!v %in% names(df)) next
-
+      
       id  <- paste0("br_flt__", .sanitize_id(v))
       sel <- input[[id]]
       if (is.null(sel) || length(sel) == 0) next
-
+      
       df <- df[as.character(df[[v]]) %in% as.character(sel), , drop = FALSE]
     }
-
+    
     if (!("Case ID" %in% names(df))) stop("base_case_all must contain a 'Case ID' column (exact name).")
     if (!("has_error" %in% names(df))) stop("base_case_all must contain a 'has_error' TRUE/FALSE column.")
     df$`Case ID` <- as.character(df$`Case ID`)
     df
   })
-
+  
   br_base_cat_filtered <- reactive({
     cat_df <- base_cat_all
     vars <- input$br_filter_vars %||% character(0)
-
-    if (!("Case ID" %in% names(cat_df))) stop("base_cat_all must contain a 'Case ID' column (exact name).")
+    
+    if (!("Case ID" %in% names(cat_df))) {
+      stop("base_cat_all must contain a 'Case ID' column (exact name).")
+    }
+    
     cat_df$`Case ID` <- as.character(cat_df$`Case ID`)
-
-    denom_ids <- br_base_case_filtered() %>% dplyr::select(`Case ID`)
-    cat_df <- cat_df %>% dplyr::semi_join(denom_ids, by = "Case ID")
-
+    
+    # only keep cases that are still in the denominator-side filtered case table
+    denom_ids <- br_base_case_filtered() %>%
+      dplyr::select(`Case ID`) %>%
+      dplyr::distinct()
+    
+    cat_df <- cat_df %>%
+      dplyr::semi_join(denom_ids, by = "Case ID")
+    
     present_dims <- intersect(.error_dim_vars, names(cat_df))
     if (length(present_dims)) {
       cat_df <- cat_df %>%
         dplyr::mutate(dplyr::across(dplyr::all_of(present_dims), .clean_cat_or_na))
     }
-
+    
+    # apply selected error-dimension filters
     for (v in intersect(vars, .error_dim_vars)) {
       if (!v %in% names(cat_df)) next
+      
       id  <- paste0("br_flt__", .sanitize_id(v))
       sel <- input[[id]]
-      if (is.null(sel) || length(sel) == 0) next
-
+      
+      # empty selection = no rows
+      if (is.null(sel) || length(sel) == 0) {
+        return(cat_df[0, , drop = FALSE])
+      }
+      
       cat_df <- cat_df %>%
         dplyr::filter(!is.na(.data[[v]]), .data[[v]] %in% as.character(sel))
     }
-
+    
     cat_df
   })
-
+  
   br_base_rates_summary <- reactive({
+    vars <- input$br_filter_vars %||% character(0)
+    for (v in vars) {
+      id <- paste0("br_flt__", .sanitize_id(v))
+      input[[id]]
+    }
+    
     denom_df <- br_base_case_filtered()
     cat_df   <- br_base_cat_filtered()
-
+    
     grp_raw <- input$br_base_group_vars %||% character(0)
+    
+    # reviewed cases denominator groups can only come from case table
+    denom_group <- grp_raw[grp_raw %in% names(denom_df)]
+    
+    # if error dimensions are selected in output grouping, keep them here
     err_group <- intersect(grp_raw, .error_dim_vars)
     err_group <- err_group[err_group %in% names(cat_df)]
-
-    # overall base error rate
+    
+    # only error cases
+    error_case_df <- denom_df %>%
+      dplyr::filter(has_error == 1)
+    
+    if (isTRUE(input$br_over_threshold_only)) {
+      error_case_df <- error_case_df %>%
+        dplyr::filter(over_threshold == 1)
+    }
+    
+    # IMPORTANT:
+    # restrict error cases to those that survive the category-side filters
+    valid_error_case_ids <- cat_df %>%
+      dplyr::select(`Case ID`) %>%
+      dplyr::distinct()
+    
+    filtered_error_case_df <- error_case_df %>%
+      dplyr::semi_join(valid_error_case_ids, by = "Case ID")
+    
+    # ----------------------------
+    # CASE 1: no error-dimension grouping in output table
+    # ----------------------------
     if (length(err_group) == 0) {
-      denom_group <- grp_raw[grp_raw %in% names(denom_df)]
-
       if (length(denom_group) == 0) {
+        reviewed_tbl <- denom_df %>%
+          dplyr::summarise(
+            reviewed_n = dplyr::n(),
+            .groups = "drop"
+          )
+        
+        error_tbl <- filtered_error_case_df %>%
+          dplyr::summarise(
+            error_n = dplyr::n(),
+            .groups = "drop"
+          )
+        
         return(
-          denom_df %>%
-            dplyr::summarise(
-              reviewed_n = dplyr::n(),
-              error_n    = sum(has_error, na.rm = TRUE),
-              error_rate = dplyr::if_else(reviewed_n > 0, error_n / reviewed_n, NA_real_),
-              .groups = "drop"
+          reviewed_tbl %>%
+            dplyr::bind_cols(error_tbl) %>%
+            dplyr::mutate(
+              error_n = dplyr::coalesce(error_n, 0L),
+              error_rate = dplyr::if_else(reviewed_n > 0, error_n / reviewed_n, NA_real_)
             )
         )
       } else {
+        reviewed_tbl <- denom_df %>%
+          dplyr::group_by(dplyr::across(dplyr::all_of(denom_group))) %>%
+          dplyr::summarise(
+            reviewed_n = dplyr::n(),
+            .groups = "drop"
+          )
+        
+        error_tbl <- filtered_error_case_df %>%
+          dplyr::group_by(dplyr::across(dplyr::all_of(denom_group))) %>%
+          dplyr::summarise(
+            error_n = dplyr::n(),
+            .groups = "drop"
+          )
+        
         return(
-          denom_df %>%
-            dplyr::group_by(dplyr::across(dplyr::all_of(denom_group))) %>%
-            dplyr::summarise(
-              reviewed_n = dplyr::n(),
-              error_n    = sum(has_error, na.rm = TRUE),
-              error_rate = dplyr::if_else(reviewed_n > 0, error_n / reviewed_n, NA_real_),
-              .groups = "drop"
+          reviewed_tbl %>%
+            dplyr::left_join(error_tbl, by = denom_group) %>%
+            dplyr::mutate(
+              error_n = dplyr::coalesce(error_n, 0L),
+              error_rate = dplyr::if_else(reviewed_n > 0, error_n / reviewed_n, NA_real_)
             ) %>%
             dplyr::arrange(dplyr::across(dplyr::all_of(denom_group)))
         )
       }
     }
-
-    # category base rates by Error Type/Nature/Element
-    denom_group <- intersect(grp_raw, intersect(names(denom_df), names(cat_df)))
-    denom_group <- setdiff(denom_group, .error_dim_vars)
-
-    denom_s <- if (length(denom_group) == 0) {
+    
+    # ----------------------------
+    # CASE 2: output table groups by error dimensions too
+    # ----------------------------
+    denom_group_no_err <- setdiff(denom_group, .error_dim_vars)
+    
+    denom_s <- if (length(denom_group_no_err) == 0) {
       denom_df %>%
         dplyr::summarise(reviewed_n = dplyr::n(), .groups = "drop") %>%
         dplyr::mutate(.join_key = 1L)
     } else {
       denom_df %>%
-        dplyr::group_by(dplyr::across(dplyr::all_of(denom_group))) %>%
+        dplyr::group_by(dplyr::across(dplyr::all_of(denom_group_no_err))) %>%
         dplyr::summarise(reviewed_n = dplyr::n(), .groups = "drop")
     }
-
-    cat_df2 <- cat_df
-    for (v in err_group) cat_df2 <- cat_df2 %>% dplyr::filter(!is.na(.data[[v]]))
-
-    err_s <- {
-      gvars <- c(denom_group, err_group)
-      out <- cat_df2 %>%
-        dplyr::group_by(dplyr::across(dplyr::all_of(gvars))) %>%
-        dplyr::summarise(
-          error_n = dplyr::n_distinct(`Case ID`),
-          .groups = "drop"
-        )
-      if (length(denom_group) == 0) out <- out %>% dplyr::mutate(.join_key = 1L)
-      out
+    
+    cat_df2 <- cat_df %>%
+      dplyr::semi_join(
+        filtered_error_case_df %>%
+          dplyr::select(`Case ID`) %>%
+          dplyr::distinct(),
+        by = "Case ID"
+      )
+    
+    for (v in err_group) {
+      cat_df2 <- cat_df2 %>%
+        dplyr::filter(!is.na(.data[[v]]))
     }
-
-    joined <- if (length(denom_group) == 0) {
-      dplyr::left_join(err_s, denom_s, by = ".join_key") %>% dplyr::select(-.join_key)
+    
+    gvars <- c(denom_group_no_err, err_group)
+    
+    err_s <- cat_df2 %>%
+      dplyr::group_by(dplyr::across(dplyr::all_of(gvars))) %>%
+      dplyr::summarise(
+        error_n = dplyr::n_distinct(`Case ID`),
+        .groups = "drop"
+      )
+    
+    if (length(denom_group_no_err) == 0) {
+      err_s <- err_s %>% dplyr::mutate(.join_key = 1L)
+      
+      joined <- err_s %>%
+        dplyr::left_join(denom_s, by = ".join_key") %>%
+        dplyr::select(-.join_key)
     } else {
-      dplyr::left_join(err_s, denom_s, by = denom_group)
+      joined <- err_s %>%
+        dplyr::left_join(denom_s, by = denom_group_no_err)
     }
-
+    
     joined %>%
       dplyr::mutate(
+        error_n = dplyr::coalesce(error_n, 0L),
         error_rate = dplyr::if_else(!is.na(reviewed_n) & reviewed_n > 0, error_n / reviewed_n, NA_real_)
       ) %>%
-      dplyr::arrange(dplyr::across(dplyr::all_of(c(denom_group, err_group))))
+      dplyr::arrange(dplyr::across(dplyr::all_of(gvars)))
   })
-
-
+  
+  # Simplified Base Rates: % of errors by State x Error Element
+  br_base_rates_simple <- reactive({
+    vars <- input$br_filter_vars %||% character(0)
+    for (v in vars) {
+      id <- paste0("br_flt__", .sanitize_id(v))
+      input[[id]]
+    }
+    
+    case_df <- br_base_case_filtered()
+    cat_df  <- br_base_cat_filtered()
+    
+    error_cases <- case_df %>%
+      dplyr::filter(has_error == 1)
+    
+    if (isTRUE(input$br_over_threshold_only)) {
+      error_cases <- error_cases %>%
+        dplyr::filter(over_threshold == 1)
+    }
+    
+    valid_case_ids <- cat_df %>%
+      dplyr::select(`Case ID`) %>%
+      dplyr::distinct()
+    
+    error_cases <- error_cases %>%
+      dplyr::semi_join(valid_case_ids, by = "Case ID") %>%
+      dplyr::select(`Case ID`, State)
+    
+    error_detail <- cat_df %>%
+      dplyr::select(`Case ID`, `Error Nature`) %>%
+      dplyr::filter(!is.na(`Error Nature`)) %>%
+      dplyr::distinct() %>%
+      dplyr::inner_join(error_cases, by = "Case ID")
+    
+    state_counts <- error_cases %>%
+      dplyr::group_by(State) %>%
+      dplyr::summarise(n = dplyr::n_distinct(`Case ID`), .groups = "drop")
+    
+    nature_counts <- error_detail %>%
+      dplyr::group_by(State, `Error Nature`) %>%
+      dplyr::summarise(n_cases = dplyr::n_distinct(`Case ID`), .groups = "drop")
+    
+    state_totals <- nature_counts %>%
+      dplyr::group_by(State) %>%
+      dplyr::summarise(total = sum(n_cases), .groups = "drop")
+    
+    out <- nature_counts %>%
+      dplyr::left_join(state_totals, by = "State") %>%
+      dplyr::mutate(pct = round(100 * n_cases / total, 1)) %>%
+      dplyr::select(State, `Error Nature`, pct) %>%
+      tidyr::pivot_wider(
+        names_from = `Error Nature`,
+        values_from = pct,
+        values_fill = 0
+      )
+    
+    out <- out %>%
+      dplyr::left_join(state_counts, by = "State") %>%
+      dplyr::relocate(n, .after = State)
+    
+    out %>%
+      dplyr::arrange(State)
+  })
+  
+  
   output$pvt_title <- renderUI({
     title_txt <- sprintf("%s by %s", input$pivot_rows, input$pivot_cols)
     
@@ -1850,7 +2219,7 @@ server <- function(input, output, session) {
         `Error cases (N)`     = error_n
       ) %>%
       dplyr::select(-reviewed_n, -error_n, -error_rate)
-
+    
     DT::datatable(
       out,
       rownames = FALSE,
@@ -1860,6 +2229,49 @@ server <- function(input, output, session) {
       )
     )
   })
+  
+  output$download_base_error_rates_csv <- downloadHandler(
+    filename = function() {
+      paste0("base_error_rates_", Sys.Date(), ".csv")
+    },
+    content = function(file) {
+      out <- br_base_rates_summary() %>%
+        dplyr::mutate(
+          `Error rate (%)`     = round(100 * error_rate, 1),
+          `Reviewed cases (N)` = reviewed_n,
+          `Error cases (N)`    = error_n
+        ) %>%
+        dplyr::select(-reviewed_n, -error_n, -error_rate)
+      
+      write.csv(out, file, row.names = FALSE, na = "")
+    }
+  )
+  
+  output$base_rates_simple_table <- DT::renderDT({
+    out <- br_base_rates_simple()
+    
+    DT::datatable(
+      out,
+      rownames = FALSE,
+      class = "compact nowrap",
+      options = list(
+        pageLength = 25,
+        scrollX = TRUE,
+        autoWidth = FALSE,
+        deferRender = TRUE
+      )
+    )
+  })
+  
+  output$download_simple_view_csv <- downloadHandler(
+    filename = function() {
+      paste0("base_rates_simple_", Sys.Date(), ".csv")
+    },
+    content = function(file) {
+      out <- br_base_rates_simple()
+      write.csv(out, file, row.names = FALSE, na = "")
+    }
+  )
   
   output$pvt_table <- renderPivottabler({
     # req(!isTRUE(input$show_base_rates))
@@ -1911,5 +2323,5 @@ server <- function(input, output, session) {
     pivottabler(pt)
   })
 }  
-  
+
 shinyApp(ui = ui, server = server)
