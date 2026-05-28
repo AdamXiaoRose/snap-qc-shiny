@@ -15,10 +15,12 @@ threshold_by_year <- c(
   `2020` = 37,
   `2021` = 39,
   `2022` = 48,
-  `2023` = 54
+  `2023` = 54,
+  `2024` = 56
 )
 
 # pivot table data
+verification_2024 <- readRDS("data/pivot_table_2024.RDS") %>% mutate(year = rep(2024, nrow(.)))
 verification_2023 <- readRDS("data/pivot_table_2023.RDS") %>% mutate(year = rep(2023, nrow(.)))
 verification_2022 <- readRDS("data/pivot_table_2022.RDS") %>% mutate(year = rep(2022, nrow(.)))
 verification_2021 <- readRDS("data/pivot_table_2021.RDS") %>% mutate(year = rep(2021, nrow(.)))
@@ -34,7 +36,8 @@ verification_all <- bind_rows(
   verification_2020,
   verification_2021,
   verification_2022,
-  verification_2023
+  verification_2023,
+  verification_2024
 ) %>%
   select(-agency) %>%
   rename(`Case ID` = case_id,
@@ -60,10 +63,11 @@ verification_all <- bind_rows(
 colnames(verification_all)
 
 # base percentages
-base_case_all <- readRDS("data/base_case_2017_2023.rds")
-base_cat_all  <- readRDS("data/base_cat_2017_2023.rds")
+base_case_all <- readRDS("data/base_case_2017_2024.rds")
+base_cat_all  <- readRDS("data/base_cat_2017_2024.rds")
 
 # errors by categories
+df_error_2024 <- readRDS("data/snap_error_2024.RDS") %>% mutate(year = rep(2024, nrow(.)))
 df_error_2023 <- readRDS("data/snap_error_2023.RDS") %>% mutate(year = rep(2023, nrow(.)))
 df_error_2022 <- readRDS("data/snap_error_2022.RDS") %>% mutate(year = rep(2022, nrow(.)))
 df_error_2021 <- readRDS("data/snap_error_2021.RDS")  %>% mutate(year = rep(2021, nrow(.)))
@@ -78,7 +82,8 @@ df_error <- do.call("rbind", list(df_error_2017,
                                   df_error_2020, 
                                   df_error_2021, 
                                   df_error_2022,
-                                  df_error_2023)) %>%
+                                  df_error_2023,
+                                  df_error_2024)) %>%
   rename(`Dollar Amount in Error` = dollar_amount) %>%
   mutate(
     threshold = unname(threshold_by_year[as.character(year)]),
@@ -98,6 +103,7 @@ error_threshold_flags <- df_error %>%
   )
 
 # errors by demographics
+df_2024 <- readRDS("data/snap_demographics_2024.RDS") %>% mutate(year = rep(2024, nrow(.)))
 df_2023 <- readRDS("data/snap_demographics_2023.RDS") %>% mutate(year = rep(2023, nrow(.)))
 df_2022 <- readRDS("data/snap_demographics_2022.RDS") %>% mutate(year = rep(2022, nrow(.)))
 df_2021 <- readRDS("data/snap_demographics_2021.RDS")  %>% mutate(year = rep(2021, nrow(.)))
@@ -112,7 +118,8 @@ df <- do.call("rbind", list(df_2017,
                             df_2020, 
                             df_2021, 
                             df_2022,
-                            df_2023))
+                            df_2023,
+                            df_2024))
 
 df <- df %>%
   drop_na(Employment) %>%
@@ -318,7 +325,7 @@ ui <- fluidPage(
           selectizeInput(
             "year_sankey", "Select Year(s):",
             choices = sort(unique(df_error$year), decreasing = TRUE),
-            multiple = TRUE, selected = c(2023, 2022, 2021, 2020, 2019, 2018, 2017)
+            multiple = TRUE, selected = sort(unique(df_error$year), decreasing = TRUE)
           ),
           bsTooltip(
             "year_sankey",
@@ -428,9 +435,9 @@ ui <- fluidPage(
       sidebarLayout(
         sidebarPanel(
           width = 3,
-          selectInput("year_bar", "Select Year(s):", 
-                      choices = sort(unique(df$year), decreasing = TRUE), 
-                      multiple = TRUE, selected = c(2023, 2022, 2021, 2020, 2019, 2018, 2017)),
+          selectInput("year_bar", "Select Year(s):",
+                      choices = sort(unique(df$year), decreasing = TRUE),
+                      multiple = TRUE, selected = sort(unique(df$year), decreasing = TRUE)),
           bsTooltip("year_bar", 
                     "If multiple years are selected, the displayed plot will be based on aggregated data.", 
                     placement = "top", trigger = "hover"),
@@ -476,9 +483,9 @@ ui <- fluidPage(
         sidebarPanel(
           width = 3,
           
-          selectInput("year_amt", "Select Year(s):", 
+          selectInput("year_amt", "Select Year(s):",
                       choices = sort(unique(df_error$year), decreasing = TRUE),
-                      multiple = TRUE, selected = max(df_error$year)),
+                      multiple = TRUE, selected = sort(unique(df_error$year), decreasing = TRUE)),
           bsTooltip("year_amt", 
                     "Select one or more years to include in the analysis.",
                     placement = "top", trigger = "hover"),
