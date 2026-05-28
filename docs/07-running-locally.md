@@ -71,7 +71,7 @@ setwd("snap-qc-shiny")          # the repo root
 shiny::runApp(launch.browser = TRUE)
 ```
 
-The first launch will read all 17 `.RDS` files and `bind_rows` them in
+The first launch will read all 20 `.RDS` files and `bind_rows` them in
 memory; expect a 5–15 second cold start. Subsequent reactive updates are
 fast because every dataset stays resident.
 
@@ -113,12 +113,12 @@ After launching, click through each tab and verify:
 - **Error Demographics:** the bar chart shows two grouped bars
   ("Selected Error" and "Other Errors") for `Type = "Policy incorrectly
   applied"`, demographic = `Employment`.
-- **Error Severity:** the dot plot shows the top 5 Error Types for 2023
-  with `Average Dollar Amount` on the y-axis.
+- **Error Severity:** the dot plot shows the top 5 Error Types across
+  2017–2024 with `Average Dollar Amount` on the y-axis.
 - **Pivot Table:** the table renders for `Error Type` × `Error
   Discovery` and the title bar reads
   *"Error Type by Error Discovery — Showing State: 53 selected
-  • Year: 2017–2023. Metric: Unique Cases."*
+  • Year: 2017–2024. Metric: Unique Cases."*
 - **Base Rates:** the long table renders, and the **Simple view** sub-tab
   shows a State × Error Nature percentage matrix.
 

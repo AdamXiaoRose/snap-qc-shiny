@@ -8,7 +8,7 @@ troubleshooting playbook.
 ## 9.1 Annual data refresh — adding a new fiscal year
 
 USDA-FNS releases a new fiscal-year QC dataset roughly **9–15 months**
-after the close of the FFY. To add (for example) FFY 2024 to the app:
+after the close of the FFY. To add (for example) FFY 2025 to the app:
 
 ### Step 1 — Get the new threshold
 
@@ -21,8 +21,8 @@ Add the threshold to `app.R:11–19`:
 ```r
 threshold_by_year <- c(
   `2017` = 38, `2018` = 37, `2019` = 37, `2020` = 37,
-  `2021` = 39, `2022` = 48, `2023` = 54,
-  `2024` = <NEW>           # <— add this line
+  `2021` = 39, `2022` = 48, `2023` = 54, `2024` = 56,
+  `2025` = <NEW>           # <— add this line
 )
 ```
 
@@ -32,9 +32,9 @@ Re-run the upstream ETL (kept outside this repo — see
 [`02-data-sources.md`](02-data-sources.md), section 2.4) to produce:
 
 ```
-data/pivot_table_2024.RDS
-data/snap_error_2024.RDS
-data/snap_demographics_2024.RDS
+data/pivot_table_2025.RDS
+data/snap_error_2025.RDS
+data/snap_demographics_2025.RDS
 ```
 
 Their schemas must match those in
@@ -51,58 +51,61 @@ contract:
 Regenerate the two combined files so they cover the new year too:
 
 ```
-data/base_case_2017_2024.rds
-data/base_cat_2017_2024.rds
+data/base_case_2017_2025.rds
+data/base_cat_2017_2025.rds
 ```
 
 (Notice the *file name itself* changes — the year range is part of the
 name.) Then update **every reference** in `app.R`:
 
-- `app.R:63–64` — `readRDS("data/base_case_2017_2024.rds")` and
-  `readRDS("data/base_cat_2017_2024.rds")`.
+- `app.R:66–67` — `readRDS("data/base_case_2017_2025.rds")` and
+  `readRDS("data/base_cat_2017_2025.rds")`.
 - Anywhere these names appear in [`03-data-files.md`](03-data-files.md)
   and in this doc.
 
 ### Step 4 — Wire up the new year in `app.R`
 
-Search `app.R` for the literal `2023` to find every site that lists
+Search `app.R` for the literal `2024` to find every site that lists
 years explicitly. The five places you must edit:
 
 ```r
-# 1. Pivot Table data load (lines 22–28)
-verification_2024 <- readRDS("data/pivot_table_2024.RDS") %>%
-                       mutate(year = rep(2024, nrow(.)))
+# 1. Pivot Table data load (lines 23–30)
+verification_2025 <- readRDS("data/pivot_table_2025.RDS") %>%
+                       mutate(year = rep(2025, nrow(.)))
 
-# 2. bind_rows for verification_all (lines 30–38)
+# 2. bind_rows for verification_all (lines 32–41)
 verification_all <- bind_rows(
-  verification_2017, ..., verification_2023, verification_2024
+  verification_2017, ..., verification_2024, verification_2025
 ) %>% ...
 
-# 3. Sankey/Severity load (lines 67–73)
-df_error_2024 <- readRDS("data/snap_error_2024.RDS") %>%
-                  mutate(year = rep(2024, nrow(.)))
+# 3. Sankey/Severity load (lines 70–77)
+df_error_2025 <- readRDS("data/snap_error_2025.RDS") %>%
+                  mutate(year = rep(2025, nrow(.)))
 
-# 4. do.call("rbind", ...) for df_error (lines 75–81)
-df_error <- do.call("rbind", list(df_error_2017, ..., df_error_2024)) %>% ...
+# 4. do.call("rbind", ...) for df_error (lines 79–86)
+df_error <- do.call("rbind", list(df_error_2017, ..., df_error_2025)) %>% ...
 
-# 5. Demographics load (lines 101–107) and bind (lines 109–115)
-df_2024 <- readRDS("data/snap_demographics_2024.RDS") %>%
-             mutate(year = rep(2024, nrow(.)))
-df <- do.call("rbind", list(df_2017, ..., df_2024))
+# 5. Demographics load (lines 106–113) and bind (lines 115–122)
+df_2025 <- readRDS("data/snap_demographics_2025.RDS") %>%
+             mutate(year = rep(2025, nrow(.)))
+df <- do.call("rbind", list(df_2017, ..., df_2025))
 ```
 
 ### Step 5 — Verify the year-default selectors
 
-Two `selectizeInput` / `selectInput` calls hard-code the default year
-selection as **all years 2017–2023**:
+All three year selectors (`year_sankey`, `year_bar`, `year_amt`) compute
+their default selection dynamically from the data:
 
-- `year_sankey` at `app.R:318–322`:
-  `selected = c(2023, 2022, 2021, 2020, 2019, 2018, 2017)`
-- `year_bar` at `app.R:431–433`: same.
+```r
+selected = sort(unique(df_error$year), decreasing = TRUE)
+```
 
-Update both to include `2024`. The Severity tab (`year_amt`) uses
-`max(df_error$year)`, which auto-updates when you add the year — no
-change needed there.
+This means they will **auto-include** the new year as soon as it is
+loaded into `df_error` / `df` — no change needed in the UI block.
+
+If you ever revert to a hard-coded default (e.g. to make Severity show
+the most recent year only), search `app.R` for the year `2024` to find
+every site that lists years explicitly and update it.
 
 ### Step 6 — Test, deploy
 

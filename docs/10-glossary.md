@@ -11,7 +11,7 @@ documentation.
 | **USDA-FNS** | United States Department of Agriculture — Food and Nutrition Service. The federal agency that administers SNAP and publishes the QC database. |
 | **QC (Quality Control)** | The federal program that monitors SNAP payment accuracy by reviewing a nationally representative sample of cases each fiscal year. State agencies sample and review cases; FNS reviews a subset of those reviews. |
 | **QC database** | The annual public-use file released by USDA-FNS containing the case-level findings from QC reviews. The source data behind this app. |
-| **Federal Fiscal Year (FFY)** | October 1 of the previous calendar year through September 30 of the year named. "FFY 2023" = 2022-10-01 through 2023-09-30. All `year`/`Year` columns in the data are FFY. |
+| **Federal Fiscal Year (FFY)** | October 1 of the previous calendar year through September 30 of the year named. "FFY 2024" = 2023-10-01 through 2024-09-30. All `year`/`Year` columns in the data are FFY. |
 | **Reviewed case** | A SNAP case selected for QC review during a given FFY. The denominator for any base-rate calculation. |
 | **Case–error row** | A single error finding attached to a single reviewed case. A case may have zero, one, or many error rows. The grain of `pivot_table_*`, `snap_error_*`, and `base_cat_*`. |
 | **Payment error** | A discrepancy between the benefit a household received and the benefit they were entitled to under program rules. Can be over-issuance (received too much) or under-issuance (received too little). |

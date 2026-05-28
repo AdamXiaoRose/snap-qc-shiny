@@ -164,7 +164,7 @@ filtered_df()           # iterate over input$filter_vars, look up each
   category table) on the Base Rates tab.
 - **`.pretty_list`** / **`.pretty_years`** at `app.R:1640–1657` — render
   filter selections as a short summary string in the pivot title bar
-  (e.g., "2017–2023" instead of listing all 7 years).
+  (e.g., "2017–2024" instead of listing all 8 years).
 
 ### Why two sets exist
 

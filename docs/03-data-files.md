@@ -5,7 +5,7 @@ row means), its columns and types, which app tab consumes it, and how it
 is loaded.
 
 All schemas were verified by reading the actual files with
-`readRDS()` on R 4.4.1 against the FFY 2023 release.
+`readRDS()` on R 4.4.1 against the FFY 2024 release.
 
 ---
 
@@ -13,11 +13,11 @@ All schemas were verified by reading the actual files with
 
 | File | Grain | Rows × Cols (sample) | Used by |
 |------|-------|----------------------|---------|
-| `pivot_table_<year>.RDS` (×7, one per FFY 2017–2023) | one row per (case, error finding) | e.g., 2023 = 14,110 × 12 | **Pivot Table** tab |
-| `snap_error_<year>.RDS` (×7) | one row per (case, error finding) | e.g., 2023 = 14,110 × 8 | **Error Pathways** (Sankey) and **Error Severity** tabs |
-| `snap_demographics_<year>.RDS` (×7) | one row per (case, error finding) joined with household demographics | e.g., 2023 = 11,503 × 17 | **Error Demographics** tab |
-| `base_case_2017_2023.rds` | one row per *reviewed case* across all 7 years | 254,637 × 7 | **Base Rates** tab (denominator) |
-| `base_cat_2017_2023.rds` | one row per (reviewed case × error category) across all 7 years | 270,959 × 13 | **Base Rates** tab (numerator) |
+| `pivot_table_<year>.RDS` (×8, one per FFY 2017–2024) | one row per (case, error finding) | e.g., 2023 = 14,110 × 12 | **Pivot Table** tab |
+| `snap_error_<year>.RDS` (×8) | one row per (case, error finding) | e.g., 2023 = 14,110 × 8 | **Error Pathways** (Sankey) and **Error Severity** tabs |
+| `snap_demographics_<year>.RDS` (×8) | one row per (case, error finding) joined with household demographics | e.g., 2023 = 11,503 × 17 | **Error Demographics** tab |
+| `base_case_2017_2024.rds` | one row per *reviewed case* across all 8 years | 299,528 × 7 | **Base Rates** tab (denominator) |
+| `base_cat_2017_2024.rds` | one row per (reviewed case × error category) across all 8 years | 314,416 × 13 | **Base Rates** tab (numerator) |
 | `pivot_table_data.RDS` | legacy/precursor combined file | 72,072 × 13 | **Not used by the current app** — safe to delete after verifying no external script depends on it. |
 
 > **Why the row counts differ between `pivot_table_<year>.RDS` and
@@ -49,12 +49,12 @@ appear multiple times if it had multiple errors.
 | `Action Type` | character | Renamed to `Case Type` in `app.R:48`. Values include `"Certification"`, `"Recertification"`. |
 | `Responsibility` | character | Renamed to `Error Responsibility` in `app.R:45`. One of `"Client Errors"`, `"Agency Errors"`, `"Technical Errors"`. |
 
-**How the app loads it.** `app.R` lines 22–58:
+**How the app loads it.** `app.R` lines 22–61:
 
 ```r
-verification_2023 <- readRDS("data/pivot_table_2023.RDS") %>%
-                       mutate(year = rep(2023, nrow(.)))   # one per year
-verification_all  <- bind_rows(verification_2017, ..., verification_2023) %>%
+verification_2024 <- readRDS("data/pivot_table_2024.RDS") %>%
+                       mutate(year = rep(2024, nrow(.)))   # one per year
+verification_all  <- bind_rows(verification_2017, ..., verification_2024) %>%
   select(-agency) %>%
   rename(`Case ID` = case_id,
          `Error Discovery` = Verification,
@@ -92,12 +92,12 @@ same source rows; the row counts match.
 | `State` | character | |
 | `Status of Error Findings` | character | |
 
-**How the app loads it.** `app.R` lines 67–98:
+**How the app loads it.** `app.R` lines 69–103:
 
 ```r
-df_error_2023 <- readRDS("data/snap_error_2023.RDS") %>% mutate(year = 2023)
+df_error_2024 <- readRDS("data/snap_error_2024.RDS") %>% mutate(year = 2024)
 # ... per year ...
-df_error <- do.call("rbind", list(df_error_2017, ..., df_error_2023)) %>%
+df_error <- do.call("rbind", list(df_error_2017, ..., df_error_2024)) %>%
   rename(`Dollar Amount in Error` = dollar_amount) %>%
   mutate(threshold = unname(threshold_by_year[as.character(year)]),
          over_threshold = if_else(!is.na(`Dollar Amount in Error`)
@@ -142,12 +142,12 @@ demographic columns appended.
 | `Status of Error Findings` | character | |
 | `State` | character | |
 
-**How the app loads it.** `app.R` lines 101–132:
+**How the app loads it.** `app.R` lines 105–139:
 
 ```r
-df_2023 <- readRDS("data/snap_demographics_2023.RDS") %>% mutate(year = 2023)
+df_2024 <- readRDS("data/snap_demographics_2024.RDS") %>% mutate(year = 2024)
 # ... per year ...
-df <- do.call("rbind", list(df_2017, ..., df_2023))
+df <- do.call("rbind", list(df_2017, ..., df_2024))
 
 df <- df %>%
   drop_na(Employment) %>% drop_na(Race) %>% drop_na(Gender) %>%
@@ -171,9 +171,9 @@ The combined `df` frame drives the **Error Demographics** bar chart.
 
 ---
 
-## 3.5 `base_case_2017_2023.rds`
+## 3.5 `base_case_2017_2024.rds`
 
-**Grain.** One row per *reviewed case*, across all 7 years. This is the
+**Grain.** One row per *reviewed case*, across all 8 years. This is the
 **denominator** for the Base Rates tab.
 
 **Columns:**
@@ -191,17 +191,17 @@ The combined `df` frame drives the **Error Demographics** bar chart.
 **Row distribution by year** (from the actual file):
 
 ```
- 2017   2018   2019   2020   2021   2022   2023
-45530  43738  43258  27112   9832  41391  43776
+ 2017   2018   2019   2020   2021   2022   2023   2024
+45530  43738  43258  27112   9832  41391  43776  44891
 ```
 
 (2020 and 2021 are smaller because of pandemic-era reductions in QC
 review activity.)
 
-**How the app loads it.** `app.R` lines 63 and 789–797:
+**How the app loads it.** `app.R` lines 66 and 795–803:
 
 ```r
-base_case_all <- readRDS("data/base_case_2017_2023.rds")
+base_case_all <- readRDS("data/base_case_2017_2024.rds")
 # inside server():
 base_case_all <- base_case_all %>%
   dplyr::mutate(
@@ -214,7 +214,7 @@ base_case_all <- base_case_all %>%
 
 ---
 
-## 3.6 `base_cat_2017_2023.rds`
+## 3.6 `base_cat_2017_2024.rds`
 
 **Grain.** One row per *(reviewed case × error category)*. A case with
 two distinct error findings produces two rows here. The Base Rates tab
@@ -239,10 +239,10 @@ had error X."
 | `Year` | numeric | |
 | `ErrorGroup` | character | Coarse rollup label. |
 
-**How the app loads it.** `app.R` line 64:
+**How the app loads it.** `app.R` line 67:
 
 ```r
-base_cat_all <- readRDS("data/base_cat_2017_2023.rds")
+base_cat_all <- readRDS("data/base_cat_2017_2024.rds")
 ```
 
 The Base Rates tab applies its filters in two places — once on the
@@ -254,7 +254,7 @@ section "Base Rates joins."
 
 ## 3.7 `pivot_table_data.RDS` (legacy)
 
-A single combined file with all 7 years (72,072 rows × 13 cols). This file
+A single combined file with all 7 years from 2017–2023 (72,072 rows × 13 cols). This file
 is **not referenced anywhere in `app.R`**; it appears to be a pre-cursor
 that was superseded by the per-year `pivot_table_<year>.RDS` files. Leave
 it in place until you have confirmed that no external notebook or analysis

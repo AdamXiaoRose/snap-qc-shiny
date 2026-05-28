@@ -1,6 +1,6 @@
 # 5. Code Architecture (`app.R`)
 
-The entire application lives in a single 2,328-line file: **`app.R`**. There
+The entire application lives in a single 2,334-line file: **`app.R`**. There
 is no `global.R`, no `ui.R`/`server.R` split, no R modules, and no helper
 files. This document is a top-down map so you can find the code for any
 behavior in seconds.
@@ -77,10 +77,10 @@ The four "global" data frames are:
 
 | Variable | Source files | Used by |
 |---|---|---|
-| `verification_all` | `pivot_table_<year>.RDS` × 7 + recoded columns | Pivot Table tab |
-| `df_error` | `snap_error_<year>.RDS` × 7 + threshold | Sankey, Severity |
-| `df` | `snap_demographics_<year>.RDS` × 7 + drop_na + threshold join | Demographics |
-| `base_case_all`, `base_cat_all` | `base_case_2017_2023.rds`, `base_cat_2017_2023.rds` | Base Rates |
+| `verification_all` | `pivot_table_<year>.RDS` × 8 + recoded columns | Pivot Table tab |
+| `df_error` | `snap_error_<year>.RDS` × 8 + threshold | Sankey, Severity |
+| `df` | `snap_demographics_<year>.RDS` × 8 + drop_na + threshold join | Demographics |
+| `base_case_all`, `base_cat_all` | `base_case_2017_2024.rds`, `base_cat_2017_2024.rds` | Base Rates |
 
 A fifth helper, `error_threshold_flags`, is a per-case flag (1 if any
 error in that case is over threshold) used to make the threshold checkbox

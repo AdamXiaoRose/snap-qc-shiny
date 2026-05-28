@@ -24,7 +24,7 @@ and program staff answer questions such as:
 
 ## Coverage
 
-- **Years:** Federal Fiscal Years (FFY) **2017 through 2023**.
+- **Years:** Federal Fiscal Years (FFY) **2017 through 2024**.
 - **Geography:** all 50 states + the District of Columbia + 2 territories
   (53 jurisdictions in total appear in the data).
 - **Population:** *reviewed* SNAP cases (not the full SNAP participating
@@ -66,9 +66,9 @@ QC error-rate threshold. This is the cutoff USDA-FNS uses to distinguish a
             │   pivot_table_<year>.RDS      (case–error rows)      │
             │   snap_error_<year>.RDS       (case–error rows)      │
             │   snap_demographics_<year>.RDS (case–error + demog)  │
-            │   base_case_2017_2023.rds     (one row per reviewed  │
+            │   base_case_2017_2024.rds     (one row per reviewed  │
             │                                 case — denominator)  │
-            │   base_cat_2017_2023.rds      (case × error-category │
+            │   base_cat_2017_2024.rds      (case × error-category │
             │                                 — numerator)         │
             └────────────────────────┬─────────────────────────────┘
                                      ▼
@@ -114,7 +114,7 @@ distinction:
 | **Error Discovery** | How the auditor discovered the error. | e.g., "From case record (verification from an automated match)". |
 | **Error Timing** | When the underlying event occurred relative to the agency's most recent action. | e.g., "At time of most recent action by agency", "After most recent action by agency". |
 | **Case Type / Action Type** | Whether this case was a new application, a recertification, etc. | "Certification", "Recertification". |
-| **Threshold (yearly QC error-rate threshold)** | The per-FFY dollar cutoff used by USDA-FNS to flag a case as having a *reportable* payment error. | 2017: $38; 2018–2020: $37; 2021: $39; 2022: $48; 2023: $54. Hard-coded in `threshold_by_year` at `app.R:11`. |
+| **Threshold (yearly QC error-rate threshold)** | The per-FFY dollar cutoff used by USDA-FNS to flag a case as having a *reportable* payment error. | 2017: $38; 2018–2020: $37; 2021: $39; 2022: $48; 2023: $54; 2024: $56. Hard-coded in `threshold_by_year` at `app.R:11`. |
 
 A single reviewed case can carry **multiple** error rows — one for each
 distinct error finding. That is why the case-level data (`base_case_*`) is

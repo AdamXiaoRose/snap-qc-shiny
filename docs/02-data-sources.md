@@ -18,11 +18,11 @@ SNAP cases.
 - Landing page:
   [`https://www.fns.usda.gov/snap/qc/database`](https://www.fns.usda.gov/snap/qc/database)
 - Format: SAS transport files (`.xpt`) plus codebooks (PDFs).
-- Coverage in this app: federal fiscal years **FFY 2017 – FFY 2023**.
+- Coverage in this app: federal fiscal years **FFY 2017 – FFY 2024**.
 
 A **federal fiscal year** runs from October 1 of the previous calendar year
-through September 30 of the year named — so "FFY 2023" covers
-2022-10-01 through 2023-09-30. Year labels in every dataset (`year`,
+through September 30 of the year named — so "FFY 2024" covers
+2023-10-01 through 2024-09-30. Year labels in every dataset (`year`,
 `Year`) refer to the **federal fiscal year**, not the calendar year.
 
 ### Convenience mirror
@@ -38,7 +38,7 @@ re-download an old release.
 
 The raw SAS files are **not** committed to this repository. Only the
 pre-aggregated `.RDS` files used by the app live in `data/`. If you need to
-rebuild the `.RDS` files from scratch — for example to add FFY 2024 — see
+rebuild the `.RDS` files from scratch — for example to add FFY 2025 — see
 [`09-maintenance.md`](09-maintenance.md), section "Adding a new data year."
 
 ---
@@ -49,12 +49,12 @@ The app distinguishes two kinds of rows:
 
 1. **Case rows** — one row per *reviewed case*. This is the *denominator*
    for any rate or share calculation. Lives in
-   `data/base_case_2017_2023.rds`.
+   `data/base_case_2017_2024.rds`.
 2. **Case–error rows** — one row per *(case × error finding)* pair. A
    single reviewed case appears here zero or more times depending on how
    many distinct errors the auditor recorded. This is the *numerator* for
    most counts and the only source of the Element / Nature / Type / Dollar
-   amount fields. Lives in `data/base_cat_2017_2023.rds` and the per-year
+   amount fields. Lives in `data/base_cat_2017_2024.rds` and the per-year
    files (`pivot_table_<year>.RDS`, `snap_error_<year>.RDS`).
 
 Demographics (`snap_demographics_<year>.RDS`) are also keyed at the
@@ -82,6 +82,7 @@ The thresholds are hard-coded in `app.R` at line 11:
 | 2021                | 39              |
 | 2022                | 48              |
 | 2023                | 54              |
+| 2024                | 56              |
 
 **Source for the thresholds:** the USDA-FNS QC technical documentation /
 annual error-rate publications. When you add a new year you must look up
@@ -138,18 +139,18 @@ If/when the ETL scripts are recovered or rewritten, store them under
 ## 2.5 Data freshness and update cadence
 
 USDA-FNS typically publishes a new fiscal-year release roughly **9–15 months
-after the close of the fiscal year** (e.g., FFY 2023 became available in
-2024–2025). To keep the dashboard current, plan for an annual refresh:
+after the close of the fiscal year** (e.g., FFY 2024 became available in
+2025–2026). To keep the dashboard current, plan for an annual refresh:
 
 1. Add the new year's threshold to `threshold_by_year`.
 2. Generate the new year's `pivot_table_<year>.RDS`,
    `snap_error_<year>.RDS`, and `snap_demographics_<year>.RDS`.
-3. Regenerate `base_case_2017_2023.rds` and `base_cat_2017_2023.rds` so
+3. Regenerate `base_case_2017_2024.rds` and `base_cat_2017_2024.rds` so
    they include the new year (the date range in their filenames should
    also be bumped, and the names updated everywhere they are read in
    `app.R`).
 4. Add the new year to the `bind_rows()` blocks in `app.R` (search for the
-   year `2023` to find every site that lists years explicitly).
+   year `2024` to find every site that lists years explicitly).
 5. Re-deploy.
 
 Detailed steps are in [`09-maintenance.md`](09-maintenance.md).

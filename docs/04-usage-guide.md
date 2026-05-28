@@ -36,9 +36,8 @@ Use cases:
 
 Every tab lets you pick one or more fiscal years. Defaults differ:
 
-- **Error Pathways, Error Demographics:** all 7 years (2017–2023) selected.
-- **Error Severity:** the most recent year only (`max(df_error$year)` =
-  2023).
+- **Error Pathways, Error Demographics, Error Severity:** all 8 years
+  (2017–2024) selected.
 - **Pivot Table, Base Rates:** the year filter is opt-in via the "Choose
   filters" picker.
 
@@ -69,7 +68,7 @@ A Sankey diagram that traces how errors flow from *what went wrong* to
 
 | Control | Choices | Default | Notes |
 |---|---|---|---|
-| **Select Year(s)** | 2017–2023, multi-select | all 7 years | Aggregates if more than one year is picked. |
+| **Select Year(s)** | 2017–2024, multi-select | all 8 years | Aggregates if more than one year is picked. |
 | **Select Error Pathway to Visualize** | `Element → Nature → Type` (3-stage), `Element → Nature`, `Element → Type`, `Nature → Type` | `Element → Nature → Type` | Switching this changes which side filters appear below. |
 | **Flow by** | `Occurrences` (count of case–error rows) / `Dollar amount` (sum of \|dollars\|) | `Occurrences` | Changes the link width metric AND the threshold input units. |
 | **(Dynamic) Element / Nature / Type filters** | grouped multi-select with "Select All" | "Select All" | Generated based on the current pathway choice. |
@@ -110,7 +109,7 @@ break down across a household demographic.
 
 | Control | Choices | Default | Notes |
 |---|---|---|---|
-| **Select Year(s)** | 2017–2023, multi-select | all 7 years | |
+| **Select Year(s)** | 2017–2024, multi-select | all 8 years | |
 | **Select Error Category** | `Type` / `Nature` / `Element` | `Type` | Radio. Drives the dropdown below. |
 | **Select Error Type/Nature/Element** | grouped picker matching the category | varies (e.g., `"Policy incorrectly applied"`) | The choice list is *static* — see `app.R:1219–1378`. |
 | **Select State(s)** | `"All States"` + 53 states, multi-select | `"All States"` | If you pick `"All States"` together with one or more individual states, you get a faceted plot with a separate panel per state plus an aggregated `"All States"` panel. |
@@ -149,7 +148,7 @@ Useful for answering "which errors cost the most per case?"
 
 | Control | Choices | Default | Notes |
 |---|---|---|---|
-| **Select Year(s)** | 2017–2023, multi-select | most recent year only (2023) | |
+| **Select Year(s)** | 2017–2024, multi-select | all 8 years | |
 | **Select State** | `"All States"` + 53 states | `"All States"` | Single-select (not multi). |
 | **Select Error Status** | All / Underissuance / Overissuance | All | |
 | **Only include cases above yearly error-rate threshold** | checkbox | ON | |
@@ -224,7 +223,7 @@ average-dollar / sum-dollar metrics, uncomment the relevant section near
   and shaded a darker blue.
 - **Title bar above the table** is generated dynamically and reads, for
   example: *"Error Type by Error Discovery — Showing State: 53 selected
-  • Year: 2017–2023. Metric: Unique Cases."*
+  • Year: 2017–2024. Metric: Unique Cases."*
 
 > **Important caveat displayed below the table:** "Each row in the dataset
 > represents a unique case–error combination, so a single case may appear

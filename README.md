@@ -23,7 +23,7 @@ tabular views. It helps users answer questions such as:
   average dollar amount, frequency)?
 - **How prevalent** are errors across states, years, and case types?
 
-The tool covers fiscal years **2017 through 2023** and applies the **annual
+The tool covers fiscal years **2017 through 2024** and applies the **annual
 QC error-rate threshold** (the per-year dollar cutoff used by USDA-FNS to
 distinguish a reportable payment error from a small variance) so that users
 can choose to focus on the cases that count toward official error rates.
@@ -147,15 +147,15 @@ publicly available SNAP Quality Control microdata.
 - **USDA-FNS QC Database:** [https://www.fns.usda.gov/snap/qc/database](https://www.fns.usda.gov/snap/qc/database)
 
 The app uses three families of pre-aggregated tables, one per year for
-2017–2023:
+2017–2024:
 
 | File pattern                       | Purpose                                               |
 | ---------------------------------- | ----------------------------------------------------- |
 | `pivot_table_<year>.RDS`           | Case–error rows for the Pivot Table and Base Rates   |
 | `snap_error_<year>.RDS`            | Case–error rows for the Sankey and Severity views    |
 | `snap_demographics_<year>.RDS`     | Case-level demographics for the Demographics view    |
-| `base_case_2017_2023.rds`          | Case-level denominator (reviewed cases) for base rates |
-| `base_cat_2017_2023.rds`           | Categorical error-dimension table for base rates     |
+| `base_case_2017_2024.rds`          | Case-level denominator (reviewed cases) for base rates |
+| `base_cat_2017_2024.rds`           | Categorical error-dimension table for base rates     |
 
 Each year is tagged with the corresponding **federal QC error-rate threshold**
 (the per-year dollar cutoff used by FNS to flag a case as having a reportable
@@ -170,6 +170,7 @@ payment error):
 | 2021 | 39              |
 | 2022 | 48              |
 | 2023 | 54              |
+| 2024 | 56              |
 
 When the **"Only include cases above yearly error-rate threshold"** checkbox
 is enabled (default on every tab), the view restricts to case–errors whose
@@ -208,7 +209,7 @@ or open `app.R` in RStudio and click **Run App**.
 ```
 snap-qc-shiny/
 ├── app.R                              # Single-file Shiny app (UI + server)
-├── data/                              # Pre-processed QC datasets, 2017–2023
+├── data/                              # Pre-processed QC datasets, 2017–2024
 ├── www/                               # Static assets (logos)
 ├── rsconnect/                         # shinyapps.io deployment metadata
 ├── README.md
