@@ -281,17 +281,27 @@ ui <- fluidPage(
     id = "footer-container",
     
     div(
-      style = "text-align: left; margin-bottom: 10px;",
-      
+      # overflow:hidden clips the image's trailing whitespace so the wide logo
+      # never forces a horizontal scrollbar while keeping its native font size.
+      style = "text-align: left; margin-bottom: 10px; overflow: hidden;",
+
       img(
-        src = "bgl_top_logo.png",
+        src = "name.png",
         style = "
-    width: 100%;
-    # max-width: 1200px;
-    max-height:120px;
-    height: auto;
+    height: 80px;
+    width: auto;
     display: block;
     margin-left: 0;
+  "
+      ),
+
+      img(
+        src = "banner.png",
+        style = "
+    width: 100%;
+    height: 15px;
+    display: block;
+    margin-top: 8px;
   "
       )
     ),
@@ -668,8 +678,11 @@ ui <- fluidPage(
           pickerInput(
             inputId = "br_filter_vars",
             label   = "Choose filters:",
-            choices = c("Error Responsibility", "Error Type", "Error Nature", "Error Element",
-                        "Error Discovery", "Error Timing", "Status of Error Findings",
+            # Error Discovery / Error Timing / Error Responsibility are intentionally
+            # omitted here: they are not present in the base-rate datasets and would
+            # show "(not available)". They remain available on the Pivot Table tab.
+            choices = c("Error Type", "Error Nature", "Error Element",
+                        "Status of Error Findings",
                         "Case Type", "Year", "State"),
             selected = c("State", "Error Element", "Error Nature"),
             multiple = TRUE,
